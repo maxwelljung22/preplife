@@ -53,7 +53,7 @@ export function HomePage() {
       <HeroPanel />
       <motion.section
         className="flex-1 flex items-center justify-center p-10 relative overflow-hidden"
-        style={{ background: "#F8F6F1" }}
+        style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }}
         initial={{ opacity: 0, x: shouldReduce ? 0 : 20 }}
         animate={{ opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
         aria-label="Sign in"
@@ -62,8 +62,8 @@ export function HomePage() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(139,15,15,.04) 0%, transparent 60%)," +
-              "radial-gradient(ellipse 60% 80% at 80% 80%, rgba(12,24,36,.05) 0%, transparent 60%)",
+              "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(176,20,32,.06) 0%, transparent 60%)," +
+              "radial-gradient(ellipse 60% 80% at 80% 80%, rgba(12,24,36,.06) 0%, transparent 60%)",
           }}
           aria-hidden="true"
         />

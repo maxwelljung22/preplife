@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --font-body: "Avenir Next", "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
+    --font-body: "Satoshi", "Avenir Next", "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
     --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
     --font-mono: "SFMono-Regular", "SF Mono", "Cascadia Code", Consolas, "Liberation Mono", monospace;
     --background: 30 20% 98%;

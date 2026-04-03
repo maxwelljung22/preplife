@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { SignInState } from "./home-page";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 interface AuthCardProps {
   state:        SignInState;
@@ -23,10 +24,10 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
       transition={{ duration: 0.52, ease: [0.34, 1.56, 0.64, 1], delay: 0.38 }}
     >
       <div
-        className="relative w-full rounded-[20px] overflow-hidden"
+        className="relative w-full overflow-hidden rounded-[28px] border border-white/60 backdrop-blur-xl"
         style={{
-          background: "#FFFFFF",
-          boxShadow: "0 0 0 1px rgba(0,0,0,.055), 0 2px 4px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06), 0 24px 64px rgba(0,0,0,.08)",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9))",
+          boxShadow: "0 0 0 1px rgba(255,255,255,.35), 0 24px 64px rgba(15,23,42,.08), 0 12px 32px rgba(15,23,42,.06)",
         }}
       >
         <div
@@ -51,11 +52,11 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
               </motion.div>
             ) : (
               <motion.div key="signin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.2 } }}>
-                <div className="w-12 h-12 rounded-[13px] flex items-center justify-center mb-6" style={{ background: "#8B0F0F", boxShadow: "0 4px 14px rgba(139,15,15,.35), 0 1px 0 rgba(255,255,255,.12) inset" }}>
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M11 2.5C6.3 2.5 2.5 6.3 2.5 11S6.3 19.5 11 19.5 19.5 15.7 19.5 11 15.7 2.5 11 2.5z" /><path d="M11 7v4l2.5 2.5" /></svg>
+                <div className="mb-8">
+                  <BrandLogo />
                 </div>
-                <h2 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, letterSpacing: "-.02em", color: "#1A1410", marginBottom: 6 }}>Welcome back.</h2>
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#6E6455", marginBottom: 32, maxWidth: 280 }}>Sign in with your St. Joe&apos;s Google account to access the platform.</p>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 600, letterSpacing: "-.03em", color: "#1A1410", marginBottom: 6 }}>Welcome back.</h2>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#6E6455", marginBottom: 32, maxWidth: 300 }}>Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
                 <div style={{ height: 1, background: "linear-gradient(90deg, transparent, #F2EFE8, transparent)", marginBottom: 32 }} />
 
                 <AnimatePresence>
@@ -70,9 +71,9 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                 <motion.button
                   onClick={onSignIn}
                   disabled={isLoading}
-                  className="relative w-full h-[50px] rounded-xl flex items-center justify-center gap-2.5 overflow-hidden"
-                  style={{ background: "#1A1410", color: "#fff", border: "none", fontFamily: "var(--font-body)", fontSize: "14.5px", fontWeight: 500, cursor: isLoading ? "not-allowed" : "pointer", boxShadow: "0 1px 0 rgba(255,255,255,.06) inset, 0 4px 14px rgba(0,0,0,.18)" }}
-                  whileHover={!isLoading ? { background: "#2A2520", y: -1.5, boxShadow: "0 8px 24px rgba(0,0,0,.24)" } : undefined}
+                  className="relative w-full h-[54px] rounded-2xl flex items-center justify-center gap-2.5 overflow-hidden"
+                  style={{ background: "linear-gradient(135deg, #101114 0%, #1F2430 100%)", color: "#fff", border: "none", fontFamily: "var(--font-body)", fontSize: "14.5px", fontWeight: 500, cursor: isLoading ? "not-allowed" : "pointer", boxShadow: "0 1px 0 rgba(255,255,255,.06) inset, 0 12px 28px rgba(16,17,20,.20)" }}
+                  whileHover={!isLoading ? { y: -1.5, boxShadow: "0 16px 34px rgba(16,17,20,.24)" } : undefined}
                   whileTap={!isLoading ? { scale: 0.99 } : undefined}
                   aria-label="Sign in with Google"
                   aria-busy={isLoading}
@@ -95,7 +96,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                   )}
                 </motion.button>
 
-                <div className="flex items-start gap-2.5 mt-5 px-3.5 py-3 rounded-[10px]" style={{ background: "#F8F6F1", border: "1px solid #F2EFE8" }}>
+                <div className="flex items-start gap-2.5 mt-5 px-3.5 py-3 rounded-[14px]" style={{ background: "rgba(248,246,241,.9)", border: "1px solid #F2EFE8" }}>
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#A89D8E" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 mt-0.5"><circle cx="7" cy="7" r="5.5" /><path d="M7 6v3M7 4.5v.5" /></svg>
                   <p style={{ fontSize: 12, lineHeight: 1.55, color: "#6E6455" }}>
                     Restricted to <code style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8B0F0F", background: "rgba(139,15,15,.07)", padding: "1px 4px", borderRadius: 4 }}>@sjprep.org</code> (faculty) and <code style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8B0F0F", background: "rgba(139,15,15,.07)", padding: "1px 4px", borderRadius: 4 }}>@sjprephawks.org</code> (students).

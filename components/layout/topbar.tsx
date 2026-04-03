@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BrandLogo } from "./brand-logo";
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard":     "Dashboard",
@@ -78,6 +79,9 @@ export function Topbar({ user }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden 2xl:block mr-2 opacity-90">
+          <BrandLogo compact className="scale-[0.92]" />
+        </div>
         {/* Search */}
         <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-72 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
           <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />

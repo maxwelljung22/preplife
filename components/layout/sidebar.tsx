@@ -11,6 +11,7 @@ import { cn, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { canAccessAdmin, getRoleBadgeClass, getRoleLabel } from "@/lib/roles";
 import type { UserRole } from "@prisma/client";
+import { BrandLogo } from "./brand-logo";
 
 interface NavItem {
   label:  string;
@@ -64,22 +65,7 @@ export function Sidebar({ user }: SidebarProps) {
 
       {/* Logo */}
       <div className="relative z-10 px-6 py-6 border-b" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div
-            className="h-10 w-10 rounded-[14px] flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #8B1A1A, #B7902B)", boxShadow: "0 12px 32px rgba(139,26,26,.22)" }}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
-              <path d="M2 4h12M4 8h8M6 12h4" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-[16px] font-bold tracking-tight leading-none" style={{ fontFamily: "var(--font-display)", color: "hsl(var(--shell-sidebar-foreground))" }}>
-              PrepLife
-            </p>
-            <p className="text-[10px] mt-0.5 tracking-[.16em] uppercase" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>St. Joseph&apos;s Prep</p>
-          </div>
-        </Link>
+        <BrandLogo dark />
       </div>
 
       {/* Navigation */}

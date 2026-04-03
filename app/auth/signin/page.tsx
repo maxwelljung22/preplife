@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Suspense } from "react";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 function SignInContent() {
   const params = useSearchParams();
@@ -11,7 +12,7 @@ function SignInContent() {
   const error       = params.get("error");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#F8F7F4" }}>
+    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }}>
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -19,14 +20,14 @@ function SignInContent() {
         className="w-full max-w-[400px]"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl mb-5" style={{ background: "#8B1A1A", boxShadow: "0 4px 14px rgba(139,26,26,.35)" }}>
-            <svg className="h-6 w-6" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M2 4h12M4 8h8M6 12h4" /></svg>
+          <div className="mb-5 flex justify-center">
+            <BrandLogo />
           </div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 600, color: "#1A1816", letterSpacing: "-.02em" }}>Welcome to PrepLife</h1>
           <p style={{ fontSize: 14, color: "#7C7A72", marginTop: 6 }}>St. Joseph&apos;s Preparatory School</p>
         </div>
 
-        <div style={{ background: "#fff", border: "1px solid #E8E6E0", borderRadius: 20, padding: "28px 28px", boxShadow: "0 4px 24px rgba(0,0,0,.06)" }}>
+        <div style={{ background: "rgba(255,255,255,.95)", border: "1px solid rgba(232,230,224,.95)", borderRadius: 24, padding: "28px 28px", boxShadow: "0 20px 64px rgba(15,23,42,.08)" }}>
           {error && (
             <div style={{ marginBottom: 20, padding: "12px 14px", background: "rgba(139,26,26,.06)", border: "1px solid rgba(139,26,26,.12)", borderRadius: 12 }}>
               <p style={{ fontSize: 13, color: "#8B1A1A", lineHeight: 1.5 }}>
@@ -38,10 +39,10 @@ function SignInContent() {
           )}
           <p style={{ fontSize: 13.5, color: "#7C7A72", marginBottom: 20, lineHeight: 1.6 }}>Sign in with your St. Joe&apos;s school Google account.</p>
           <motion.button
-            whileHover={{ scale: 1.01, boxShadow: "0 8px 30px rgba(0,0,0,.12)" }}
+            whileHover={{ scale: 1.01, boxShadow: "0 18px 38px rgba(16,17,20,.18)" }}
             whileTap={{ scale: 0.98 }}
             onClick={() => signIn("google", { callbackUrl })}
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "14px 20px", background: "#1A1816", color: "#fff", border: "none", borderRadius: 14, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}
+            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "14px 20px", background: "linear-gradient(135deg, #101114 0%, #1F2430 100%)", color: "#fff", border: "none", borderRadius: 18, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 14px 30px rgba(16,17,20,.16)" }}
           >
             <svg viewBox="0 0 24 24" style={{ height: 20, width: 20, flexShrink: 0 }}>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -63,7 +64,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: "#F8F7F4" }} />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }} />}>
       <SignInContent />
     </Suspense>
   );
