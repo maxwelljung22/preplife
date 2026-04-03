@@ -27,11 +27,8 @@ export function BrandLogo({ href = "/dashboard", compact = false, dark = false, 
       </div>
       <div className="min-w-0">
         <div className="truncate text-[22px] font-medium tracking-[-0.06em]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-          <span style={{ color: dark ? "rgba(255,255,255,0.96)" : "#101114" }}>Prep</span>
-          <span
-            className="ml-0.5 bg-clip-text text-transparent"
-            style={{ backgroundImage: dark ? "linear-gradient(135deg, #FFB6A7 0%, #FF7A7A 50%, #D12B39 100%)" : "linear-gradient(135deg, #B01224 0%, #E6525C 45%, #FF8E86 100%)" }}
-          >
+          <span className={cn(dark ? "text-white/95" : "text-neutral-950")}>Prep</span>
+          <span className="brand-gradient ml-0.5 bg-clip-text text-transparent">
             Life
           </span>
         </div>

@@ -23,16 +23,10 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.52, ease: [0.34, 1.56, 0.64, 1], delay: 0.38 }}
     >
-      <div
-        className="relative w-full overflow-hidden rounded-[28px] border border-white/60 backdrop-blur-xl"
-        style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9))",
-          boxShadow: "0 0 0 1px rgba(255,255,255,.35), 0 24px 64px rgba(15,23,42,.08), 0 12px 32px rgba(15,23,42,.06)",
-        }}
-      >
+      <div className="auth-card-surface relative w-full overflow-hidden rounded-[28px]">
         <div
           className="absolute top-0 left-6 right-6 h-px"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(139,15,15,.14), rgba(138,110,47,.10), transparent)" }}
+          style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.18), hsl(var(--accent) / 0.14), transparent)" }}
           aria-hidden="true"
         />
         <div className="p-11">
@@ -43,10 +37,10 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                   <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l5 5L21 7" /></svg>
                 </div>
                 <div>
-                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, color: "#1A1410", marginBottom: 4 }}>Signed in!</h3>
-                  <p style={{ fontSize: 14, color: "#6E6455" }}>Redirecting to your dashboard…</p>
+                  <h3 className="mb-1 text-[22px] font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>Signed in!</h3>
+                  <p className="text-sm text-muted-foreground">Redirecting to your dashboard…</p>
                 </div>
-                <div className="w-full h-0.5 rounded-full overflow-hidden mt-2" style={{ background: "#F2EFE8" }}>
+                <div className="mt-2 h-0.5 w-full overflow-hidden rounded-full bg-border">
                   <motion.div className="h-full" style={{ background: "linear-gradient(to right, #8B0F0F, #B89240)", borderRadius: 99 }} initial={{ width: "0%" }} animate={{ width: "100%" }} transition={{ duration: 1.8, ease: "easeInOut" }} />
                 </div>
               </motion.div>
@@ -55,15 +49,15 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                 <div className="mb-8">
                   <BrandLogo />
                 </div>
-                <h2 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 600, letterSpacing: "-.03em", color: "#1A1410", marginBottom: 6 }}>Welcome back.</h2>
-                <p style={{ fontSize: 14, lineHeight: 1.6, color: "#6E6455", marginBottom: 32, maxWidth: 300 }}>Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
-                <div style={{ height: 1, background: "linear-gradient(90deg, transparent, #F2EFE8, transparent)", marginBottom: 32 }} />
+                <h2 className="mb-1.5 text-[28px] font-semibold tracking-[-0.03em] text-foreground" style={{ fontFamily: "var(--font-display)" }}>Welcome back.</h2>
+                <p className="mb-8 max-w-[300px] text-sm leading-6 text-muted-foreground">Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
+                <div className="auth-divider mb-8 h-px" />
 
                 <AnimatePresence>
                   {isError && errorMessage && (
-                    <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} transition={{ duration: 0.25 }} className="mb-4 px-3.5 py-3 rounded-xl flex items-start gap-2.5" style={{ background: "rgba(139,15,15,.06)", border: "1px solid rgba(139,15,15,.12)" }} role="alert">
+                    <motion.div initial={{ opacity: 0, y: -8, height: 0 }} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, y: -8, height: 0 }} transition={{ duration: 0.25 }} className="mb-4 flex items-start gap-2.5 rounded-xl border border-[hsl(var(--primary)/0.16)] bg-[hsl(var(--primary)/0.08)] px-3.5 py-3" role="alert">
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#8B0F0F" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 mt-0.5"><circle cx="7" cy="7" r="5.5" /><path d="M7 4.5v2.5M7 9v.5" /></svg>
-                      <p style={{ fontSize: 12.5, color: "#8B0F0F", lineHeight: 1.4 }}>{errorMessage}</p>
+                      <p className="text-[12.5px] leading-[1.4] text-[hsl(var(--primary))]">{errorMessage}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -96,14 +90,14 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                   )}
                 </motion.button>
 
-                <div className="flex items-start gap-2.5 mt-5 px-3.5 py-3 rounded-[14px]" style={{ background: "rgba(248,246,241,.9)", border: "1px solid #F2EFE8" }}>
+                <div className="auth-note mt-5 flex items-start gap-2.5 rounded-[14px] px-3.5 py-3">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#A89D8E" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 mt-0.5"><circle cx="7" cy="7" r="5.5" /><path d="M7 6v3M7 4.5v.5" /></svg>
-                  <p style={{ fontSize: 12, lineHeight: 1.55, color: "#6E6455" }}>
-                    Restricted to <code style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8B0F0F", background: "rgba(139,15,15,.07)", padding: "1px 4px", borderRadius: 4 }}>@sjprep.org</code> (faculty) and <code style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#8B0F0F", background: "rgba(139,15,15,.07)", padding: "1px 4px", borderRadius: 4 }}>@sjprephawks.org</code> (students).
+                  <p className="text-[12px] leading-[1.55] text-muted-foreground">
+                    Restricted to <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</code> (faculty) and <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</code> (students).
                   </p>
                 </div>
-                <div className="mt-7 pt-5 border-t text-center" style={{ borderColor: "#F2EFE8" }}>
-                  <p style={{ fontSize: 12, color: "#A89D8E", lineHeight: 1.5 }}>By signing in, you agree to the platform&apos;s terms of use. Managed by St. Joseph&apos;s Preparatory School.</p>
+                <div className="mt-7 border-t border-border pt-5 text-center">
+                  <p className="text-[12px] leading-[1.5] text-muted-foreground">By signing in, you agree to the platform&apos;s terms of use. Managed by St. Joseph&apos;s Preparatory School.</p>
                 </div>
               </motion.div>
             )}

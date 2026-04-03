@@ -12,7 +12,7 @@ function SignInContent() {
   const error       = params.get("error");
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }}>
+    <div className="auth-page-bg min-h-screen flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -23,21 +23,21 @@ function SignInContent() {
           <div className="mb-5 flex justify-center">
             <BrandLogo />
           </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 600, color: "#1A1816", letterSpacing: "-.02em" }}>Welcome to PrepLife</h1>
-          <p style={{ fontSize: 14, color: "#7C7A72", marginTop: 6 }}>St. Joseph&apos;s Preparatory School</p>
+          <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-foreground" style={{ fontFamily: "var(--font-display)" }}>Welcome to PrepLife</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">St. Joseph&apos;s Preparatory School</p>
         </div>
 
-        <div style={{ background: "rgba(255,255,255,.95)", border: "1px solid rgba(232,230,224,.95)", borderRadius: 24, padding: "28px 28px", boxShadow: "0 20px 64px rgba(15,23,42,.08)" }}>
+        <div className="auth-card-surface rounded-[24px] p-7">
           {error && (
-            <div style={{ marginBottom: 20, padding: "12px 14px", background: "rgba(139,26,26,.06)", border: "1px solid rgba(139,26,26,.12)", borderRadius: 12 }}>
-              <p style={{ fontSize: 13, color: "#8B1A1A", lineHeight: 1.5 }}>
+            <div className="mb-5 rounded-xl border border-[hsl(var(--primary)/0.16)] bg-[hsl(var(--primary)/0.08)] px-3.5 py-3">
+              <p className="text-[13px] leading-[1.5] text-[hsl(var(--primary))]">
                 {error === "DomainNotAllowed"
                   ? "Only @sjprep.org and @sjprephawks.org accounts are allowed."
                   : "An error occurred. Please try again."}
               </p>
             </div>
           )}
-          <p style={{ fontSize: 13.5, color: "#7C7A72", marginBottom: 20, lineHeight: 1.6 }}>Sign in with your St. Joe&apos;s school Google account.</p>
+          <p className="mb-5 text-[13.5px] leading-[1.6] text-muted-foreground">Sign in with your St. Joe&apos;s school Google account.</p>
           <motion.button
             whileHover={{ scale: 1.01, boxShadow: "0 18px 38px rgba(16,17,20,.18)" }}
             whileTap={{ scale: 0.98 }}
@@ -53,7 +53,7 @@ function SignInContent() {
             Continue with Google
           </motion.button>
         </div>
-        <p className="text-center mt-5" style={{ fontSize: 11.5, color: "#B0ADA5", lineHeight: 1.6 }}>
+        <p className="mt-5 text-center text-[11.5px] leading-[1.6] text-muted-foreground">
           Restricted to <span style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</span> and{" "}
           <span style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</span>
         </p>
@@ -64,7 +64,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }} />}>
+    <Suspense fallback={<div className="auth-page-bg min-h-screen" />}>
       <SignInContent />
     </Suspense>
   );

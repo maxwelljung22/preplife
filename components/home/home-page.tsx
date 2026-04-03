@@ -52,8 +52,7 @@ export function HomePage() {
     >
       <HeroPanel />
       <motion.section
-        className="flex-1 flex items-center justify-center p-10 relative overflow-hidden"
-        style={{ background: "linear-gradient(180deg, #FCFAF6 0%, #F5EFE7 100%)" }}
+        className="auth-page-bg flex-1 flex items-center justify-center p-10 relative overflow-hidden"
         initial={{ opacity: 0, x: shouldReduce ? 0 : 20 }}
         animate={{ opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
         aria-label="Sign in"
@@ -62,8 +61,8 @@ export function HomePage() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 20% 20%, rgba(176,20,32,.06) 0%, transparent 60%)," +
-              "radial-gradient(ellipse 60% 80% at 80% 80%, rgba(12,24,36,.06) 0%, transparent 60%)",
+              "radial-gradient(ellipse 80% 60% at 20% 20%, hsl(var(--primary) / 0.08) 0%, transparent 60%)," +
+              "radial-gradient(ellipse 60% 80% at 80% 80%, hsl(var(--foreground) / 0.05) 0%, transparent 60%)",
           }}
           aria-hidden="true"
         />
@@ -73,8 +72,8 @@ export function HomePage() {
           animate={{ opacity: 1, transition: { delay: 1.1, duration: 0.5 } }}
           className="absolute bottom-7 left-10 right-10 flex items-center gap-3"
         >
-          <div className="w-5 h-px" style={{ background: "#B0A898" }} />
-          <p className="text-[13px] italic font-light tracking-wide" style={{ color: "#B0A898", fontFamily: "var(--font-display)" }}>
+          <div className="w-5 h-px bg-border" />
+          <p className="text-[13px] italic font-light tracking-wide text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
             &quot;Men for Others&quot; — St. Joseph&apos;s Preparatory, 1851
           </p>
         </motion.div>
