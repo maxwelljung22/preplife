@@ -61,7 +61,7 @@ export async function leaveClub(clubId: string) {
 export async function createClub(data: {
   name: string; emoji: string; tagline: string; description: string;
   category: string; commitment: string; meetingDay: string; meetingTime: string;
-  meetingRoom: string; requiresApp: boolean; tags: string[];
+  meetingRoom: string; requiresApp: boolean; tags: string[]; gradientFrom?: string; gradientTo?: string;
 }) {
   const session = await auth();
   if (!session?.user || !canAccessAdmin(session.user.role)) return { error: "Unauthorized" };
@@ -83,6 +83,8 @@ export async function createClub(data: {
         meetingRoom: data.meetingRoom,
         requiresApp: data.requiresApp,
         tags: data.tags,
+        gradientFrom: data.gradientFrom ?? "#1a3a6e",
+        gradientTo: data.gradientTo ?? "#0c2a52",
       },
     });
 
@@ -99,16 +101,27 @@ export async function createClub(data: {
 export async function updateClub(clubId: string, data: Partial<{
   name: string; emoji: string; tagline: string; description: string;
   category: string; commitment: string; meetingDay: string; meetingTime: string;
-  meetingRoom: string; requiresApp: boolean; tags: string[]; isActive: boolean;
+  meetingRoom: string; requiresApp: boolean; tags: string[]; isActive: boolean; gradientFrom: string; gradientTo: string;
 }>) {
   const session = await auth();
   if (!session?.user || !canAccessAdmin(session.user.role)) return { error: "Unauthorized" };
 
   try {
-    await prisma.club.update({ where: { id: clubId }, data: data as any });
+    const slug = data.name
+      ? data.name.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim()
+      : undefined;
+
+    const club = await prisma.club.update({
+      where: { id: clubId },
+      data: {
+        ...(data as any),
+        ...(slug ? { slug } : {}),
+      },
+    });
     revalidatePath("/clubs");
     revalidatePath("/admin/clubs");
-    return { success: true };
+    revalidatePath(`/clubs/${club.slug}`);
+    return { success: true, slug: club.slug };
   } catch (err) {
     return { error: "Failed to update club" };
   }
