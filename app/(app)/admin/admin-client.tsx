@@ -1,0 +1,498 @@
+// app/(app)/admin/admin-client.tsx
+"use client";
+
+import { useState, useTransition } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Users, Building2, FileText, Scroll,
+  GraduationCap, Plus, Edit, Trash2,
+  CheckCircle, XCircle, Clock, ShieldCheck,
+  BarChart3, TrendingUp, AlertTriangle,
+} from "lucide-react";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  updateApplicationStatus,
+  createChangelogEntry,
+  deleteClubAdmin,
+  updateUserRole,
+} from "./actions";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+import type { NhsRecord } from "@/lib/airtable";
+
+type AdminTab = "overview" | "clubs" | "users" | "applications" | "changelog" | "nhs";
+
+interface Props {
+  clubs: any[];
+  users: any[];
+  applications: any[];
+  changelog: any[];
+  nhsRecords: NhsRecord[];
+}
+
+const TABS: { id: AdminTab; label: string; icon: any }[] = [
+  { id: "overview",      label: "Overview",     icon: BarChart3    },
+  { id: "clubs",         label: "Clubs",        icon: Building2    },
+  { id: "users",         label: "Users",        icon: Users        },
+  { id: "applications",  label: "Applications", icon: FileText     },
+  { id: "changelog",     label: "Changelog",    icon: Scroll       },
+  { id: "nhs",           label: "NHS Data",     icon: GraduationCap},
+];
+
+export function AdminClient({ clubs, users, applications, changelog, nhsRecords }: Props) {
+  const [tab, setTab] = useState<AdminTab>("overview");
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-lg bg-crimson/10 flex items-center justify-center">
+          <ShieldCheck className="h-4 w-4 text-crimson" />
+        </div>
+        <div>
+          <p className="text-[10.5px] font-bold uppercase tracking-[.09em] text-crimson">Administration</p>
+          <h1 className="font-display text-[28px] font-semibold text-foreground tracking-tight leading-none">Admin Panel</h1>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-px border-b border-border overflow-x-auto">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-[13px] font-[500] border-b-[2.5px] -mb-px whitespace-nowrap transition-all",
+              tab === t.id ? "border-crimson text-crimson" : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <t.icon className="h-3.5 w-3.5" />
+            {t.label}
+            {t.id === "applications" && applications.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-crimson text-white rounded-full text-[10px] font-bold">{applications.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          {tab === "overview"     && <OverviewTab clubs={clubs} users={users} applications={applications} nhsRecords={nhsRecords} />}
+          {tab === "clubs"        && <ClubsTab clubs={clubs} />}
+          {tab === "users"        && <UsersTab users={users} />}
+          {tab === "applications" && <ApplicationsTab applications={applications} />}
+          {tab === "changelog"    && <ChangelogTab entries={changelog} />}
+          {tab === "nhs"          && <NhsTab records={nhsRecords} />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function OverviewTab({ clubs, users, applications, nhsRecords }: any) {
+  const activeClubs   = clubs.filter((c: any) => c.isActive).length;
+  const totalMembers  = users.length;
+  const pendingApps   = applications.length;
+  const nhsComplete   = nhsRecords.filter((r: NhsRecord) => r.status === "complete").length;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { icon: Building2,   val: activeClubs,  label: "Active Clubs",      color: "text-crimson bg-crimson/8" },
+          { icon: Users,       val: totalMembers, label: "Total Users",        color: "text-navy bg-navy/8"       },
+          { icon: FileText,    val: pendingApps,  label: "Pending Apps",       color: "text-amber-600 bg-amber-50 dark:bg-amber-900/20" },
+          { icon: GraduationCap,val: nhsComplete, label: "NHS Complete",       color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20" },
+        ].map(({ icon: Icon, val, label, color }) => (
+          <div key={label} className="bg-card border border-border rounded-2xl p-5 shadow-card">
+            <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center mb-4", color)}>
+              <Icon className="h-4.5 w-4.5" />
+            </div>
+            <p className="font-display text-[32px] font-semibold text-foreground leading-none">{val}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[.06em] text-muted-foreground mt-1.5">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Top clubs by membership */}
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+          <p className="text-[13px] font-bold text-foreground mb-4">Top Clubs by Membership</p>
+          <div className="space-y-3">
+            {[...clubs].sort((a: any, b: any) => b._count.memberships - a._count.memberships).slice(0, 6).map((club: any) => (
+              <div key={club.id} className="flex items-center gap-3">
+                <span className="text-lg">{club.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-foreground truncate">{club.name}</p>
+                  <div className="h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+                    <div
+                      className="h-full bg-crimson/70 rounded-full"
+                      style={{ width: `${Math.min(100, (club._count.memberships / Math.max(...clubs.map((c: any) => c._count.memberships), 1)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <span className="text-[12px] font-bold text-muted-foreground">{club._count.memberships}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent users */}
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+          <p className="text-[13px] font-bold text-foreground mb-4">Recent Users</p>
+          <div className="space-y-3">
+            {users.slice(0, 6).map((user: any) => (
+              <div key={user.id} className="flex items-center gap-3">
+                <Avatar className="h-8 w-8 flex-shrink-0">
+                  <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-navy to-crimson text-white">
+                    {user.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-medium text-foreground truncate">{user.name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <span className={cn("text-[10.5px] px-2 py-0.5 rounded-full font-medium", user.role === "ADMIN" ? "bg-crimson/10 text-crimson" : "bg-muted text-muted-foreground")}>
+                  {user.role.toLowerCase()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Clubs Tab ────────────────────────────────────────────────────────────────
+function ClubsTab({ clubs }: { clubs: any[] }) {
+  const [pending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleDelete = (clubId: string, clubName: string) => {
+    if (!confirm(`Archive "${clubName}"? This will hide it from students.`)) return;
+    startTransition(async () => {
+      const result = await deleteClubAdmin(clubId);
+      if (result?.error) toast({ title: "Error", description: result.error, variant: "destructive" });
+      else toast({ title: `"${clubName}" archived ✓` });
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Link
+          href="/admin/clubs/new"
+          className="flex items-center gap-2 px-4 py-2.5 bg-crimson text-white rounded-xl text-[13.5px] font-medium hover:bg-crimson/90 transition-all shadow-md shadow-crimson/20"
+        >
+          <Plus className="h-4 w-4" /> New Club
+        </Link>
+      </div>
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              {["Club", "Category", "Members", "Posts", "Status", ""].map((h) => (
+                <th key={h} className="text-left text-[10.5px] font-bold uppercase tracking-[.07em] text-muted-foreground px-5 py-3">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {clubs.map((club, i) => (
+              <motion.tr key={club.id} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: i * 0.02 } }} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{club.emoji}</span>
+                    <div>
+                      <p className="text-[13.5px] font-semibold text-foreground">{club.name}</p>
+                      {club.tagline && <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{club.tagline}</p>}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-5 py-3.5">
+                  <span className="px-2.5 py-1 bg-muted rounded-full text-[11.5px] text-muted-foreground">
+                    {club.category.charAt(0) + club.category.slice(1).toLowerCase()}
+                  </span>
+                </td>
+                <td className="px-5 py-3.5 text-[13.5px] font-semibold text-foreground">{club._count.memberships}</td>
+                <td className="px-5 py-3.5 text-[13.5px] text-muted-foreground">{club._count.posts}</td>
+                <td className="px-5 py-3.5">
+                  <span className={cn("flex items-center gap-1.5 text-[11.5px] font-medium w-fit px-2 py-0.5 rounded-full", club.isActive ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20" : "text-muted-foreground bg-muted")}>
+                    <span className={cn("w-1.5 h-1.5 rounded-full", club.isActive ? "bg-emerald-500" : "bg-muted-foreground")} />
+                    {club.isActive ? "Active" : "Archived"}
+                  </span>
+                </td>
+                <td className="px-5 py-3.5">
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/clubs/${club.id}/edit`} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+                      <Edit className="h-3.5 w-3.5" />
+                    </Link>
+                    <button onClick={() => handleDelete(club.id, club.name)} disabled={pending} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-muted-foreground hover:text-red-600">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Users Tab ────────────────────────────────────────────────────────────────
+function UsersTab({ users }: { users: any[] }) {
+  const [pending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleRoleChange = (userId: string, newRole: string) => {
+    startTransition(async () => {
+      const result = await updateUserRole(userId, newRole as any);
+      if (result?.error) toast({ title: "Error", description: result.error, variant: "destructive" });
+      else toast({ title: "Role updated ✓" });
+    });
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-border">
+            {["User", "Email", "Role", "Clubs", "Joined", ""].map((h) => (
+              <th key={h} className="text-left text-[10.5px] font-bold uppercase tracking-[.07em] text-muted-foreground px-5 py-3">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user, i) => (
+            <motion.tr key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: i * 0.02 } }} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+              <td className="px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={user.image} />
+                    <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-navy to-crimson text-white">
+                      {user.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-[13.5px] font-semibold text-foreground">{user.name ?? "Unnamed"}</p>
+                </div>
+              </td>
+              <td className="px-5 py-3.5 text-[13px] text-muted-foreground">{user.email}</td>
+              <td className="px-5 py-3.5">
+                <select
+                  defaultValue={user.role}
+                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                  disabled={pending}
+                  className={cn(
+                    "text-[11.5px] font-medium px-2 py-1 rounded-full border-none outline-none cursor-pointer",
+                    user.role === "ADMIN" ? "bg-crimson/10 text-crimson" : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <option value="STUDENT">student</option>
+                  <option value="ADMIN">admin</option>
+                </select>
+              </td>
+              <td className="px-5 py-3.5 text-[13.5px] font-semibold text-foreground">{user._count.memberships}</td>
+              <td className="px-5 py-3.5 text-[12px] text-muted-foreground">{formatRelativeTime(user.createdAt)}</td>
+              <td className="px-5 py-3.5" />
+            </motion.tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Applications Tab ─────────────────────────────────────────────────────────
+function ApplicationsTab({ applications }: { applications: any[] }) {
+  const [pending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handle = (id: string, status: string, name: string) => {
+    startTransition(async () => {
+      const result = await updateApplicationStatus(id, status as any);
+      if (result?.error) toast({ title: "Error", description: result.error, variant: "destructive" });
+      else toast({ title: `Application ${status.toLowerCase()} ✓` });
+    });
+  };
+
+  if (applications.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-4xl opacity-30 mb-3">📋</div>
+        <p className="font-display text-[18px] text-muted-foreground">No pending applications</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {applications.map((app, i) => (
+        <motion.div key={app.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.04 } }} className="bg-card border border-border rounded-2xl p-5 shadow-card">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <Avatar className="h-9 w-9 flex-shrink-0">
+                <AvatarImage src={app.applicant.image} />
+                <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-navy to-crimson text-white">
+                  {app.applicant.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-[14px] font-semibold text-foreground">{app.applicant.name}</p>
+                <p className="text-[12px] text-muted-foreground">{app.applicant.email}</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">
+                  {app.club.emoji} Applying to <span className="font-medium text-foreground">{app.club.name}</span>
+                </p>
+                <p className="text-[11px] text-muted-foreground/60 mt-1">{formatRelativeTime(app.createdAt)}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => handle(app.id, "ACCEPTED", app.applicant.name)}
+                disabled={pending}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl text-[12.5px] font-medium hover:bg-emerald-100 transition-colors"
+              >
+                <CheckCircle className="h-3.5 w-3.5" /> Accept
+              </button>
+              <button
+                onClick={() => handle(app.id, "REJECTED", app.applicant.name)}
+                disabled={pending}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl text-[12.5px] font-medium hover:bg-red-100 transition-colors"
+              >
+                <XCircle className="h-3.5 w-3.5" /> Decline
+              </button>
+            </div>
+          </div>
+          {/* Show responses */}
+          {Object.keys(app.responses).length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
+              {Object.entries(app.responses).map(([key, val]) => (
+                <div key={key}>
+                  <p className="text-[11px] font-bold uppercase tracking-[.07em] text-muted-foreground">{key}</p>
+                  <p className="text-[13px] text-foreground/80 mt-0.5">{String(val)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Changelog Tab ────────────────────────────────────────────────────────────
+function ChangelogTab({ entries }: { entries: any[] }) {
+  const [form, setForm] = useState({ title: "", content: "", type: "FEATURE", isFeatured: false });
+  const [submitting, setSubmitting] = useState(false);
+  const [localEntries, setLocalEntries] = useState(entries);
+  const { toast } = useToast();
+
+  const TYPES = ["FEATURE", "IMPROVEMENT", "BUG_FIX", "CLUB_UPDATE", "ANNOUNCEMENT"];
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const result = await createChangelogEntry(form);
+    setSubmitting(false);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else if (result?.entry) {
+      setLocalEntries([result.entry, ...localEntries]);
+      setForm({ title: "", content: "", type: "FEATURE", isFeatured: false });
+      toast({ title: "Changelog entry published ✓" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Create form */}
+      <form onSubmit={handleCreate} className="bg-card border border-border rounded-2xl p-6 shadow-card space-y-4">
+        <p className="text-[13px] font-bold text-foreground">Post New Update</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-semibold text-muted-foreground">Title</label>
+            <input required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="What changed?" className="w-full px-3.5 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] outline-none focus:bg-card focus:border-border transition-all" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-semibold text-muted-foreground">Type</label>
+            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className="w-full px-3.5 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] outline-none focus:bg-card focus:border-border transition-all">
+              {TYPES.map((t) => <option key={t} value={t}>{t.replace("_", " ")}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-semibold text-muted-foreground">Content (HTML supported)</label>
+          <textarea required rows={4} value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} placeholder="<p>Describe the update…</p>" className="w-full px-3.5 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] resize-none outline-none focus:bg-card focus:border-border font-mono transition-all" />
+        </div>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.isFeatured} onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))} className="accent-crimson" />
+            <span className="text-[13px] text-muted-foreground">Feature on dashboard</span>
+          </label>
+          <button type="submit" disabled={submitting || !form.title.trim()} className="px-5 py-2 bg-crimson text-white rounded-xl text-[13px] font-medium hover:bg-crimson/90 disabled:opacity-50 transition-all shadow-md shadow-crimson/20">
+            {submitting ? "Publishing…" : "Publish"}
+          </button>
+        </div>
+      </form>
+
+      {/* Existing entries */}
+      <div className="space-y-3">
+        {localEntries.map((entry, i) => (
+          <div key={entry.id} className="bg-card border border-border rounded-2xl p-5 shadow-card">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-[.07em] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{entry.type.replace("_", " ")}</span>
+                  {entry.isFeatured && <span className="text-[10px] font-bold uppercase tracking-[.06em] px-2 py-0.5 rounded-full bg-crimson/10 text-crimson">Featured</span>}
+                </div>
+                <p className="text-[14px] font-bold text-foreground">{entry.title}</p>
+                <p className="text-[12px] text-muted-foreground mt-0.5">{formatRelativeTime(entry.publishedAt)}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── NHS Tab ──────────────────────────────────────────────────────────────────
+function NhsTab({ records }: { records: NhsRecord[] }) {
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <p className="text-[13px] font-bold text-foreground">NHS Hours — {records.length} students</p>
+        <Link href="/nhs" className="text-[12.5px] text-crimson hover:opacity-70 transition-opacity">Open full view →</Link>
+      </div>
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-border">
+            {["Student", "Grade", "Hours", "Status"].map((h) => (
+              <th key={h} className="text-left text-[10.5px] font-bold uppercase tracking-[.07em] text-muted-foreground px-5 py-3">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {records.slice(0, 20).map((r, i) => (
+            <tr key={r.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+              <td className="px-5 py-3 text-[13.5px] font-medium text-foreground">{r.studentName}</td>
+              <td className="px-5 py-3 text-[13px] text-muted-foreground">{r.grade ? `Grade ${r.grade}` : "—"}</td>
+              <td className="px-5 py-3 font-display text-[15px] font-semibold text-foreground">{r.totalHours}/{r.requiredHours}</td>
+              <td className="px-5 py-3">
+                <span className={cn("text-[11.5px] font-semibold capitalize", {
+                  "text-emerald-600": r.status === "complete",
+                  "text-blue-600":    r.status === "on_track",
+                  "text-amber-600":   r.status === "behind",
+                  "text-muted-foreground": r.status === "not_required",
+                })}>{r.status.replace("_", " ")}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

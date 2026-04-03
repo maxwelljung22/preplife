@@ -1,0 +1,437 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
+enum ClubCategory {
+  STEM
+  HUMANITIES
+  ARTS
+  BUSINESS
+  SERVICE
+  SPORTS
+  FAITH
+  OTHER
+}
+
+enum CommitmentLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum MembershipRole {
+  MEMBER
+  OFFICER
+  PRESIDENT
+  FACULTY_ADVISOR
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  WAITLISTED
+}
+
+enum PollVisibility {
+  PUBLIC
+  ANONYMOUS
+}
+
+enum ChangelogType {
+  FEATURE
+  IMPROVEMENT
+  BUG_FIX
+  CLUB_UPDATE
+  ANNOUNCEMENT
+}
+
+enum ResourceType {
+  LINK
+  DOCUMENT
+  PDF
+  SPREADSHEET
+  VIDEO
+  OTHER
+}
+
+enum EventType {
+  MEETING
+  COMPETITION
+  SOCIAL
+  SERVICE
+  SCHOOL_WIDE
+  OTHER
+}
+
+// ─── NEXTAUTH MODELS ──────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── USER ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  role           UserRole  @default(STUDENT)
+  grade          Int?
+  graduationYear Int?
+  bio            String?
+  lastSeenAt     DateTime  @default(now())
+  notifLastSeen  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  memberships       Membership[]
+  posts             Post[]
+  applications      Application[]
+  votes             Vote[]
+  notifications     Notification[]
+  resources         Resource[]
+  attendanceRecords AttendanceRecord[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ─── CLUB ─────────────────────────────────────────────────────────────────────
+
+model Club {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  name         String
+  shortName    String?
+  emoji        String          @default("🏛️")
+  tagline      String?
+  description  String          @db.Text
+  category     ClubCategory
+  commitment   CommitmentLevel @default(MEDIUM)
+  tags         String[]
+  isActive     Boolean         @default(true)
+  requiresApp  Boolean         @default(false)
+  maxMembers   Int?
+  meetingRoom  String?
+  meetingDay   String?
+  meetingTime  String?
+  gradientFrom String          @default("#0E1B2C")
+  gradientTo   String          @default("#152438")
+  bannerUrl    String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  memberships        Membership[]
+  posts              Post[]
+  events             Event[]
+  applications       Application[]
+  appForm            AppForm?
+  polls              Poll[]
+  resources          Resource[]
+  attendanceSessions AttendanceSession[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+}
+
+// ─── MEMBERSHIP ───────────────────────────────────────────────────────────────
+
+model Membership {
+  id        String           @id @default(cuid())
+  userId    String
+  clubId    String
+  role      MembershipRole   @default(MEMBER)
+  status    MembershipStatus @default(ACTIVE)
+  joinedAt  DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clubId])
+  @@index([userId])
+  @@index([clubId])
+  @@index([status])
+}
+
+// ─── POST ─────────────────────────────────────────────────────────────────────
+
+model Post {
+  id        String   @id @default(cuid())
+  clubId    String
+  authorId  String
+  title     String
+  content   String   @db.Text
+  imageUrl  String?
+  isPinned  Boolean  @default(false)
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  club   Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([clubId, createdAt])
+}
+
+// ─── EVENT ────────────────────────────────────────────────────────────────────
+
+model Event {
+  id          String    @id @default(cuid())
+  clubId      String?
+  title       String
+  description String?   @db.Text
+  location    String?
+  type        EventType @default(MEETING)
+  startTime   DateTime
+  endTime     DateTime
+  isAllDay    Boolean   @default(false)
+  isPublic    Boolean   @default(true)
+  googleCalId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  club               Club?              @relation(fields: [clubId], references: [id])
+  attendanceSessions AttendanceSession[]
+
+  @@index([clubId, startTime])
+  @@index([startTime])
+}
+
+// ─── RESOURCE ─────────────────────────────────────────────────────────────────
+
+model Resource {
+  id          String       @id @default(cuid())
+  clubId      String
+  uploaderId  String
+  name        String
+  type        ResourceType @default(LINK)
+  url         String
+  description String?
+  size        Int?
+  createdAt   DateTime     @default(now())
+
+  club     Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+}
+
+// ─── APPLICATION FORM ─────────────────────────────────────────────────────────
+
+model AppForm {
+  id        String    @id @default(cuid())
+  clubId    String    @unique
+  fields    Json
+  deadline  DateTime?
+  maxSlots  Int?
+  isOpen    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // ← This was the missing opposite relation field
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+}
+
+// ─── APPLICATION ──────────────────────────────────────────────────────────────
+
+model Application {
+  id          String            @id @default(cuid())
+  clubId      String
+  applicantId String
+  status      ApplicationStatus @default(SUBMITTED)
+  responses   Json
+  reviewNotes String?           @db.Text
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  club      Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  applicant User @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, applicantId])
+  @@index([clubId, status])
+}
+
+// ─── POLL ─────────────────────────────────────────────────────────────────────
+
+model Poll {
+  id          String         @id @default(cuid())
+  clubId      String?
+  createdById String
+  title       String
+  description String?
+  visibility  PollVisibility @default(ANONYMOUS)
+  endsAt      DateTime?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  club    Club?        @relation(fields: [clubId], references: [id])
+  options PollOption[]
+  votes   Vote[]
+
+  @@index([isActive])
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  text   String
+  order  Int    @default(0)
+
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes Vote[]
+
+  @@index([pollId])
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+}
+
+// ─── NOTIFICATION ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String
+  refId     String?
+  refType   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// ─── CHANGELOG ────────────────────────────────────────────────────────────────
+
+model ChangelogEntry {
+  id          String        @id @default(cuid())
+  type        ChangelogType
+  title       String
+  content     String        @db.Text
+  isFeatured  Boolean       @default(false)
+  isPublished Boolean       @default(true)
+  publishedAt DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// ─── ATTENDANCE ───────────────────────────────────────────────────────────────
+
+model AttendanceSession {
+  id        String   @id @default(cuid())
+  clubId    String
+  eventId   String?
+  date      DateTime
+  qrCode    String?  @unique @default(cuid())
+  isOpen    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  club    Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  event   Event?             @relation(fields: [eventId], references: [id])
+  records AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  present   Boolean  @default(true)
+  checkIn   DateTime @default(now())
+
+  session AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+// ─── NHS CACHE ────────────────────────────────────────────────────────────────
+
+model NhsHoursCache {
+  id            String   @id @default(cuid())
+  airtableId    String   @unique
+  studentName   String
+  studentEmail  String?
+  grade         Int?
+  totalHours    Float    @default(0)
+  requiredHours Float    @default(0)
+  activities    Json     @default("[]")
+  lastSyncAt    DateTime @default(now())
+  rawData       Json?
+}
