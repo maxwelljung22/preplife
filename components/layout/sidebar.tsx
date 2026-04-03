@@ -18,6 +18,7 @@ interface NavItem {
   icon:   React.ReactNode;
   badge?: number;
   isNew?: boolean;
+  exact?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -33,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const ADMIN_ITEMS: NavItem[] = [
-  { label: "Admin Panel", href: "/admin", icon: <ShieldCheck className="h-4 w-4" /> },
+  { label: "Admin Panel", href: "/admin", icon: <ShieldCheck className="h-4 w-4" />, exact: true },
   { label: "Charters", href: "/admin/charters", icon: <Rocket className="h-4 w-4" /> },
 ];
 
@@ -44,8 +45,10 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
 
-  const isActive = (href: string) =>
-    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+  const isActive = (item: NavItem) => {
+    if (item.exact || item.href === "/dashboard") return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
+  };
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 w-72 sidebar-bg flex flex-col border-r" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
@@ -90,16 +93,17 @@ export function Sidebar({ user }: SidebarProps) {
             href={item.href}
             className={cn(
               "relative flex items-center gap-3 px-3 py-3 rounded-2xl text-[13.5px] font-medium transition-all duration-150 border",
-              isActive(item.href)
+              isActive(item)
                 ? "shadow-sm"
                 : "hover:-translate-y-[1px]"
             )}
             style={
-              isActive(item.href)
+              isActive(item)
                 ? {
                     background: "hsl(var(--shell-sidebar-active))",
                     color: "hsl(var(--shell-sidebar-foreground))",
                     borderColor: "hsl(var(--shell-sidebar-border))",
+                    boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
                   }
                 : {
                     color: "hsl(var(--shell-sidebar-muted))",
@@ -110,8 +114,8 @@ export function Sidebar({ user }: SidebarProps) {
             <span
               className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{
-                background: isActive(item.href) ? "linear-gradient(135deg, rgba(139,26,26,.14), rgba(183,144,43,.14))" : "rgba(127,127,127,.08)",
-                color: isActive(item.href) ? "#8B1A1A" : "currentColor",
+                background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.14), rgba(183,144,43,.14))" : "rgba(127,127,127,.08)",
+                color: isActive(item) ? "#8B1A1A" : "currentColor",
               }}
             >
               {item.icon}
@@ -136,16 +140,17 @@ export function Sidebar({ user }: SidebarProps) {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-2xl text-[13.5px] font-medium transition-all duration-150 border",
-                  isActive(item.href)
+                  isActive(item)
                     ? "shadow-sm"
                     : "hover:-translate-y-[1px]"
                 )}
                 style={
-                  isActive(item.href)
+                  isActive(item)
                     ? {
                         background: "hsl(var(--shell-sidebar-active))",
                         color: "hsl(var(--shell-sidebar-foreground))",
                         borderColor: "hsl(var(--shell-sidebar-border))",
+                        boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
                       }
                     : {
                         color: "hsl(var(--shell-sidebar-muted))",
@@ -153,7 +158,15 @@ export function Sidebar({ user }: SidebarProps) {
                       }
                 }
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(139,26,26,.10)", color: "#8B1A1A" }}>{item.icon}</span>
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl"
+                  style={{
+                    background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.14), rgba(183,144,43,.14))" : "rgba(139,26,26,.10)",
+                    color: "#8B1A1A",
+                  }}
+                >
+                  {item.icon}
+                </span>
                 {item.label}
               </Link>
             ))}

@@ -15,9 +15,11 @@ const PAGE_TITLES: Record<string, string> = {
   "/announcements": "Announcements",
   "/voting":        "Polls & Elections",
   "/applications":  "Applications",
+  "/charter/apply": "New Charter",
   "/changelog":     "What's New",
   "/nhs":           "NHS Hours",
   "/admin":         "Admin Panel",
+  "/admin/charters": "Charter Reviews",
   "/profile":       "Profile",
 };
 
@@ -64,17 +66,20 @@ export function Topbar({ user }: TopbarProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 h-[54px] flex items-center justify-between px-6 lg:px-8 gap-3 topbar-glass border-b transition-shadow duration-200",
-        scrolled ? "shadow-sm border-border" : "border-transparent"
+        "sticky top-0 z-40 flex min-h-[72px] items-center justify-between px-6 lg:px-8 gap-4 topbar-glass border-b transition-all duration-200",
+        scrolled ? "border-border shadow-[0_16px_40px_rgba(15,23,42,0.08)]" : "border-transparent"
       )}
     >
-      <h1 className="flex-1 min-w-0 text-[15px] font-semibold text-foreground truncate" style={{ fontFamily: "var(--font-display)" }}>
-        {title}
-      </h1>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">PrepLife Workspace</p>
+        <h1 className="mt-1 truncate text-[20px] font-semibold tracking-[-0.04em] text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+          {title}
+        </h1>
+      </div>
 
       <div className="flex items-center gap-2 shrink-0">
         {/* Search */}
-        <div className="hidden xl:flex items-center gap-2 h-9 px-3 bg-muted border border-transparent rounded-[10px] focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-56">
+        <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-72 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
           <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           <input
             placeholder="Search clubs, events…"
@@ -85,7 +90,7 @@ export function Topbar({ user }: TopbarProps) {
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="h-9 w-9 rounded-[10px] border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 hover:shadow-card"
+          className="h-11 w-11 rounded-2xl border border-border/70 bg-card/90 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 hover:shadow-card"
           title="Toggle theme"
           aria-label="Toggle theme"
         >
@@ -96,7 +101,7 @@ export function Topbar({ user }: TopbarProps) {
         <div ref={notifRef} className="relative">
           <button
             onClick={() => setNotifOpen((v) => !v)}
-            className="relative h-9 w-9 rounded-[10px] border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
+            className="relative h-11 w-11 rounded-2xl border border-border/70 bg-card/90 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
             aria-label="Open notifications"
             aria-expanded={notifOpen}
             aria-haspopup="dialog"
@@ -106,7 +111,7 @@ export function Topbar({ user }: TopbarProps) {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 top-[calc(100%+10px)] w-80 bg-card border border-border rounded-2xl shadow-modal overflow-hidden z-50 animate-fade-up origin-top-right">
+            <div className="absolute right-0 top-[calc(100%+12px)] w-80 bg-card border border-border rounded-3xl shadow-modal overflow-hidden z-50 animate-fade-up origin-top-right">
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
               <p className="text-[13px] font-bold text-foreground">Notifications</p>
               <span className="text-[11px] text-muted-foreground">Inbox</span>
@@ -129,7 +134,7 @@ export function Topbar({ user }: TopbarProps) {
 
         {/* Avatar */}
         <Link href="/profile" aria-label="Open profile">
-          <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent hover:ring-crimson/30 transition-all">
+          <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-transparent hover:ring-crimson/30 transition-all shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
             <AvatarImage src={user.image ?? undefined} />
             <AvatarFallback className="text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg, #B8952E, #A31212)" }}>
               {initials(user.name)}

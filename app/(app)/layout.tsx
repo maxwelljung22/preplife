@@ -8,11 +8,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!session?.user) redirect("/auth/signin");
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="app-shell-bg flex min-h-screen bg-background">
       <Sidebar user={session.user} />
       <div className="flex-1 flex flex-col ml-[288px] min-w-0">
         <Topbar user={session.user} />
-        <main className="flex-1 p-6 lg:p-8 max-w-[1480px] w-full mx-auto">
+        <main className="flex-1 w-full max-w-[1520px] mx-auto px-6 py-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

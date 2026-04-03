@@ -35,13 +35,17 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
   return (
     <div className="space-y-7">
       {/* Welcome banner */}
-      <motion.div {...fu(0)} className="relative overflow-hidden rounded-3xl px-9 py-7 flex items-center justify-between" style={{ background: "#0C1824" }}>
+      <motion.div
+        {...fu(0)}
+        className="relative flex items-center justify-between overflow-hidden rounded-[32px] border border-[rgba(255,255,255,0.07)] px-9 py-8 shadow-[0_30px_80px_rgba(12,24,36,0.18)]"
+        style={{ background: "linear-gradient(135deg, #0C1824 0%, #12263A 58%, #182D45 100%)" }}
+      >
         {/* Orbs */}
         <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(139,26,26,.18) 0%, transparent 70%)", filter: "blur(40px)", transform: "translate(30%, -30%)" }} />
         <div className="absolute bottom-0 right-32 w-48 h-48 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(138,110,47,.10) 0%, transparent 70%)", filter: "blur(40px)" }} />
 
         <div className="relative z-10">
-          <p className="text-[11px] font-semibold tracking-[.09em] uppercase mb-2" style={{ color: "rgba(255,255,255,.35)", fontFamily: "var(--font-mono)" }}>
+          <p className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[.16em] uppercase" style={{ color: "rgba(255,255,255,.56)", fontFamily: "var(--font-mono)" }}>
             {format(new Date(), "EEEE, MMMM d · yyyy")}
           </p>
           <h1 className="text-white" style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, letterSpacing: "-.015em", lineHeight: 1.15 }}>
@@ -60,7 +64,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
             { num: upcomingEvents.length, label: "This Week" },
             { num: unreadNotifs, label: "Unread" },
           ].map((s) => (
-            <div key={s.label} className="text-center">
+            <div key={s.label} className="rounded-[24px] border border-white/8 bg-white/5 px-5 py-4 text-center backdrop-blur-md">
               <p className="text-white" style={{ fontFamily: "var(--font-display)", fontSize: 30, fontWeight: 600, lineHeight: 1 }}>{s.num}</p>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".07em", color: "rgba(255,255,255,.32)", marginTop: 4 }}>{s.label}</p>
             </div>
@@ -76,7 +80,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
           { ico: "📣", val: recentPosts.length,     lbl: "New Posts",        col: "gold"   },
           { ico: "🎓", val: nhsRecord?.totalHours ?? "—", lbl: "NHS Hours",  col: "green"  },
         ].map((s, i) => (
-          <motion.div key={s.lbl} {...fu(i * 0.05)} className="bg-card border border-border rounded-2xl p-5 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200">
+          <motion.div key={s.lbl} {...fu(i * 0.05)} className="surface-card rounded-[28px] p-5 card-lift">
             <div className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-4 text-[17px]" style={{ background: STAT_COLORS[s.col] }}>
               {s.ico}
             </div>
@@ -98,7 +102,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <Link href="/clubs" className="text-[12.5px] font-semibold transition-colors" style={{ color: "#8B1A1A" }}>Browse all →</Link>
             </div>
             {myMemberships.length === 0 ? (
-              <div className="bg-card border border-border rounded-2xl p-10 text-center">
+              <div className="surface-card rounded-[28px] p-10 text-center">
                 <div className="text-4xl mb-3 opacity-30">🏛️</div>
                 <p className="text-muted-foreground" style={{ fontFamily: "var(--font-display)", fontSize: 17 }}>No clubs yet</p>
                 <Link href="/clubs" className="inline-block mt-3 text-[13px] font-medium" style={{ color: "#8B1A1A" }}>Browse the directory →</Link>
@@ -107,7 +111,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <div className="space-y-2">
                 {myMemberships.map((m: any) => (
                   <Link key={m.id} href={`/clubs/${m.club.slug}`}>
-                    <div className="flex items-center gap-3.5 bg-card border border-border rounded-xl p-3.5 hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                    <div className="surface-card flex items-center gap-3.5 rounded-[24px] p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover cursor-pointer">
                       <div className="h-10 w-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `linear-gradient(135deg, ${m.club.gradientFrom}, ${m.club.gradientTo})` }}>
                         {m.club.emoji}
                       </div>
@@ -132,7 +136,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600 }}>Announcements</h2>
               <Link href="/announcements" className="text-[12.5px] font-semibold" style={{ color: "#8B1A1A" }}>See all →</Link>
             </div>
-            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+            <div className="surface-card overflow-hidden rounded-[28px]">
               {recentPosts.length === 0 ? (
                 <div className="p-10 text-center">
                   <div className="text-3xl mb-2 opacity-30">📣</div>
@@ -172,7 +176,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600 }}>Upcoming</h2>
               <Link href="/calendar" className="text-[12px] font-semibold" style={{ color: "#8B1A1A" }}>Calendar →</Link>
             </div>
-            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+            <div className="surface-card overflow-hidden rounded-[28px]">
               {upcomingEvents.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="text-3xl mb-2 opacity-30">📅</div>
@@ -203,7 +207,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
 function NhsWidget({ record }: { record: NhsRecord | null }) {
   if (!record || record.status === "not_required") {
     return (
-      <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+      <div className="surface-card rounded-[28px] p-5">
         <p className="text-[13.5px] font-bold text-foreground mb-2">NHS Hours</p>
         <p className="text-[12.5px] text-muted-foreground leading-relaxed">
           {record ? "NHS hours are tracked for Juniors and Seniors." : "No NHS record found for your account."}
