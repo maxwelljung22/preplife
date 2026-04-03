@@ -1,14 +1,14 @@
 // app/(app)/voting/page.tsx
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { VotingClient } from "./voting-client";
 import { canAccessAdmin } from "@/lib/roles";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Polls & Elections" };
 export const dynamic = "force-dynamic";
 
 export default async function VotingPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   const [polls, userVotes] = await Promise.all([

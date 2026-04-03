@@ -3,6 +3,7 @@
  * NHS Hours integration via Airtable API with PostgreSQL cache.
  * Cache TTL: 5 minutes. Matches students by email, then name fallback.
  */
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID ?? "appJJ7OQC18yfQF5V";
@@ -131,6 +132,22 @@ async function isCacheStale(): Promise<boolean> {
   return Date.now() - latest.lastSyncAt.getTime() > CACHE_TTL_MS;
 }
 
+const getCachedNhsCacheRows = cache(async () =>
+  prisma.nhsHoursCache.findMany({
+    orderBy: { studentName: "asc" },
+    select: {
+      airtableId: true,
+      studentName: true,
+      studentEmail: true,
+      grade: true,
+      totalHours: true,
+      requiredHours: true,
+      activities: true,
+      lastSyncAt: true,
+    },
+  })
+);
+
 async function writeCache(records: NhsRecord[]): Promise<void> {
   if (records.length === 0) return;
   await prisma.$transaction(
@@ -188,14 +205,29 @@ export async function getAllNhsRecords(forceRefresh = false): Promise<NhsRecord[
       console.error("[NHS] Airtable fetch failed, using cache:", err);
     }
   }
-  const cached = await prisma.nhsHoursCache.findMany({ orderBy: { studentName: "asc" } });
+  const cached = await getCachedNhsCacheRows();
   return cached.map(cacheToRecord);
 }
 
 export async function getNhsRecordForUser(email: string, name?: string | null): Promise<NhsRecord | null> {
-  const all = await getAllNhsRecords();
   const emailLower = email.toLowerCase();
-  let match = all.find((r) => r.studentEmail?.toLowerCase() === emailLower);
+  const exactEmailMatch = await prisma.nhsHoursCache.findFirst({
+    where: { studentEmail: { equals: emailLower, mode: "insensitive" } },
+    select: {
+      airtableId: true,
+      studentName: true,
+      studentEmail: true,
+      grade: true,
+      totalHours: true,
+      requiredHours: true,
+      activities: true,
+      lastSyncAt: true,
+    },
+  });
+  if (exactEmailMatch) return cacheToRecord(exactEmailMatch);
+
+  const all = await getAllNhsRecords();
+  let match: NhsRecord | undefined;
   if (!match && name) {
     const norm = name.toLowerCase().replace(/\s+/g, " ").trim();
     match = all.find((r) => {

@@ -1,8 +1,8 @@
 // app/(app)/clubs/[slug]/page.tsx
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ClubDetailClient } from "./club-detail-client";
+import { getSession } from "@/lib/session";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -10,8 +10,7 @@ interface Props {
 }
 
 async function getClubData(slug: string, userId: string) {
-  const [club, membership] = await Promise.all([
-    prisma.club.findUnique({
+  const club = await prisma.club.findUnique({
       where: { slug, isActive: true },
       include: {
         _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
@@ -50,14 +49,14 @@ async function getClubData(slug: string, userId: string) {
           take: 5,
         },
       },
-    }),
-    prisma.membership.findUnique({
-      where: { userId_clubId: { userId, clubId: (await prisma.club.findUnique({ where: { slug }, select: { id: true } }))?.id ?? "" } },
-      select: { status: true, role: true },
-    }),
-  ]);
+    });
 
   if (!club) return null;
+
+  const membership = await prisma.membership.findUnique({
+    where: { userId_clubId: { userId, clubId: club.id } },
+    select: { status: true, role: true },
+  });
 
   // Fetch user's votes for polls in this club
   const pollIds = club.polls.map((p) => p.id);
@@ -83,7 +82,7 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function ClubDetailPage({ params, searchParams }: Props) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   const { slug } = await params;

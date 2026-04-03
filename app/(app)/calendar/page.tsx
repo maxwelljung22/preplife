@@ -1,13 +1,13 @@
 // app/(app)/calendar/page.tsx
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CalendarClient } from "./calendar-client";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Calendar" };
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   const now = new Date();

@@ -1,7 +1,7 @@
 // app/page.tsx
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { HomePage } from "@/components/home/home-page";
+import { getSession } from "@/lib/session";
 
 export const metadata = {
   title: "PrepLife — St. Joseph's Preparatory School",
@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function RootPage() {
-  const session = await auth();
+  const session = await getSession();
   if (session?.user) {
     redirect("/dashboard");
   }

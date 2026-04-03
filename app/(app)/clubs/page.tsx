@@ -1,10 +1,10 @@
 // app/(app)/clubs/page.tsx
 import { Suspense } from "react";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ClubsClient } from "./clubs-client";
 import { ClubsSkeleton } from "./clubs-skeleton";
 import type { ClubCategory, CommitmentLevel } from "@prisma/client";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Club Directory" };
 export const dynamic = "force-dynamic";
@@ -51,7 +51,7 @@ export default async function ClubsPage({
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   const resolvedSearchParams = (await searchParams) ?? {};

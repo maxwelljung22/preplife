@@ -1,14 +1,14 @@
 import { Suspense } from "react";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getNhsRecordForUser } from "@/lib/airtable";
 import { DashboardClient } from "./dashboard-client";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) return null;
 
   const userId    = session.user.id;

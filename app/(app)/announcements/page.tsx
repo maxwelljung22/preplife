@@ -1,14 +1,14 @@
 // app/(app)/announcements/page.tsx
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AnnouncementsClient } from "./announcements-client";
 import { canAccessAdmin } from "@/lib/roles";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Announcements" };
 export const dynamic = "force-dynamic";
 
 export default async function AnnouncementsPage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   // Get posts from ALL clubs (not just joined) — school-wide feed

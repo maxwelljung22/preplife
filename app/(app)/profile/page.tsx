@@ -1,12 +1,12 @@
 // app/(app)/profile/page.tsx
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileClient } from "./profile-client";
+import { getSession } from "@/lib/session";
 
 export const metadata = { title: "Profile" };
 
 export default async function ProfilePage() {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user) return null;
 
   const [user, memberships] = await Promise.all([
