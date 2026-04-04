@@ -130,6 +130,48 @@ function UnifiedFeaturePanel({
   const glowOpacity = useTransform(progress, [start - 0.02, start + 0.14], [0.18, 1]);
   const frontOpacity = useTransform(progress, [start, start + 0.06, start + 0.12], [1, 0.55, 0]);
   const backOpacity = useTransform(progress, [start + 0.06, start + 0.12, start + 0.18], [0, 0.72, 1]);
+  const titleOpacity = useTransform(progress, [start - 0.04, start + 0.1], [0.2, 1]);
+  const blurbOpacity = useTransform(progress, [start + 0.02, start + 0.14], [0, 1]);
+
+  if (story.label === "Everything connected") {
+    return (
+      <motion.div
+        style={{ opacity: activeOpacity, y: cardY, scale: cardScale }}
+        className="relative flex min-h-[29rem] items-center sm:min-h-[31rem]"
+      >
+        <div className="w-full py-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/38">{story.eyebrow}</p>
+          <motion.h3
+            style={{ opacity: titleOpacity }}
+            className="mt-5 max-w-[10ch] text-balance font-display text-[clamp(3.25rem,7vw,6.8rem)] font-semibold tracking-[-0.1em] text-white"
+          >
+            {story.label}
+          </motion.h3>
+          <motion.p
+            style={{ opacity: blurbOpacity }}
+            className="mt-5 max-w-[28rem] text-[1.02rem] leading-8 text-white/58"
+          >
+            {story.blurb}
+          </motion.p>
+
+          <div className="mt-10 space-y-4">
+            {story.lines.map((item, itemIndex) => (
+              <motion.p
+                key={item}
+                initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: 28 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.45, delay: itemIndex * 0.1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                className="font-display text-[clamp(1.6rem,3vw,2.5rem)] tracking-[-0.07em] text-white/74"
+              >
+                {item}
+              </motion.p>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div style={{ opacity: activeOpacity, y: cardY, scale: cardScale }} className="relative h-[29rem] sm:h-[31rem]">
@@ -300,10 +342,10 @@ function FeaturesScene() {
         <div className="max-w-md lg:sticky lg:top-24">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.34em] text-white/44">Core system</p>
           <h2 className="text-balance font-display text-[clamp(2.2rem,5vw,4.6rem)] font-semibold tracking-[-0.08em] text-white">
-            Each feature expands into focus.
+            Features come into view.
           </h2>
           <p className="mt-5 text-balance text-[clamp(1rem,2vw,1.1rem)] leading-8 text-white/58">
-            Minimal, cinematic, and clearer. The name leads, then the preview grows around it.
+            Cleaner, sharper, and more cinematic. The title lands first, then the experience opens around it.
           </p>
         </div>
 
