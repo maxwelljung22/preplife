@@ -1,29 +1,42 @@
 import { redirect } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { FirstRunIntroGate } from "@/components/intro/first-run-intro-gate";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session?.user) redirect("/auth/signin");
-  const introState = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { hasSeenIntro: true },
-  });
+  const [introState, notifications, unreadNotifications] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { hasSeenIntro: true },
+    }),
+    prisma.notification.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 8,
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        type: true,
+        refId: true,
+        refType: true,
+        isRead: true,
+        createdAt: true,
+      },
+    }),
+    prisma.notification.count({
+      where: { userId: session.user.id, isRead: false },
+    }),
+  ]);
 
   return (
     <FirstRunIntroGate userId={session.user.id} shouldShowInitially={!introState?.hasSeenIntro}>
-      <div className="app-shell-bg flex min-h-screen bg-background">
-        <Sidebar user={session.user} />
-        <div className="flex min-w-0 flex-1 flex-col lg:ml-[288px]">
-          <Topbar user={session.user} />
-          <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-7">
-            {children}
-          </main>
-        </div>
-      </div>
+      <AppShell user={session.user} notifications={notifications} unreadNotifications={unreadNotifications}>
+        {children}
+      </AppShell>
     </FirstRunIntroGate>
   );
 }

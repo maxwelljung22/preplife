@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   House, Compass, CalendarDays, Megaphone,
-  Vote, FileStack, Sparkles, ShieldCheck, GraduationCap, LogOut, Rocket, X, ScanLine, PlusSquare, Info,
+  Vote, FileStack, ShieldCheck, GraduationCap, LogOut, Rocket, X, ScanLine, PlusSquare, Info,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn, initials } from "@/lib/utils";
@@ -43,7 +43,6 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Announcements", href: "/announcements", icon: <Megaphone className="h-4 w-4" /> },
       { label: "Voting", href: "/voting", icon: <Vote className="h-4 w-4" /> },
       { label: "Applications", href: "/applications", icon: <FileStack className="h-4 w-4" /> },
-      { label: "What's New", href: "/changelog", icon: <Sparkles className="h-4 w-4" /> },
     ],
   },
   {
@@ -212,11 +211,27 @@ function SidebarNavContent({
   );
 }
 
-export function Sidebar({ user }: ShellUser) {
+export function Sidebar({
+  user,
+  open,
+  onClose,
+}: ShellUser & {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <aside className="sidebar-bg fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r lg:flex" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
-      <SidebarNavContent user={user} />
-    </aside>
+    <>
+      <div className={cn("fixed inset-0 z-[55] bg-black/35 transition-opacity duration-300", open ? "opacity-100 lg:block" : "pointer-events-none opacity-0")} onClick={onClose} />
+      <aside
+        className={cn(
+          "sidebar-bg fixed inset-y-0 left-0 z-[60] flex w-72 flex-col border-r transition-transform duration-300 ease-out",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+        style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}
+      >
+        <SidebarNavContent user={user} onNavigate={onClose} />
+      </aside>
+    </>
   );
 }
 

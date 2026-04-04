@@ -76,6 +76,12 @@ enum ResourceType {
   OTHER
 }
 
+enum ResourceCategory {
+  RESOURCE
+  ASSIGNMENT
+  FORM
+}
+
 enum EventType {
   MEETING
   COMPETITION
@@ -193,6 +199,8 @@ model Club {
   bannerUrl    String?
   isFlagged    Boolean         @default(false)
   flagReason   String?
+  workspaceTitle String?
+  workspaceDescription String? @db.Text
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
@@ -282,8 +290,11 @@ model Resource {
   uploaderId  String
   name        String
   type        ResourceType @default(LINK)
+  category    ResourceCategory @default(RESOURCE)
   url         String
   description String?
+  dueAt       DateTime?
+  membersOnly Boolean      @default(true)
   size        Int?
   createdAt   DateTime     @default(now())
 

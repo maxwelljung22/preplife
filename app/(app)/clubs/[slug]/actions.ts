@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { canAccessAdmin, canManageClubMembershipRole } from "@/lib/roles";
+import type { MembershipRole, ResourceCategory, ResourceType } from "@prisma/client";
 
 async function canManageClub(clubId: string, userId: string, role: string) {
   if (canAccessAdmin(role as any)) return true;
@@ -26,6 +27,12 @@ export async function createPost(clubId: string, title: string, content: string)
   }
 
   try {
+    const club = await prisma.club.findUnique({
+      where: { id: clubId },
+      select: { name: true, slug: true },
+    });
+    if (!club) return { error: "Club not found" };
+
     const post = await prisma.post.create({
       data: { clubId, authorId: session.user.id, title, content },
       include: { author: { select: { name: true, image: true } } },
@@ -40,7 +47,7 @@ export async function createPost(clubId: string, title: string, content: string)
       await prisma.notification.createMany({
         data: members.map((m) => ({
           userId: m.userId,
-          title: `New post in ${post.clubId}`,
+          title: `${club.name} announcement`,
           body: title,
           type: "club_post",
           refId: post.id,
@@ -49,7 +56,9 @@ export async function createPost(clubId: string, title: string, content: string)
       });
     }
 
+    revalidatePath(`/clubs/${club.slug}`);
     revalidatePath(`/clubs`);
+    revalidatePath("/dashboard");
     return { post };
   } catch (err) {
     console.error("[createPost]", err);
@@ -209,7 +218,15 @@ export async function deleteClubEvent(eventId: string) {
 
 export async function createClubResource(
   clubId: string,
-  data: { name: string; url: string; description?: string; type?: "LINK" | "DOCUMENT" | "PDF" | "SPREADSHEET" | "VIDEO" | "OTHER" }
+  data: {
+    name: string;
+    url: string;
+    description?: string;
+    type?: ResourceType;
+    category?: ResourceCategory;
+    dueAt?: string | null;
+    membersOnly?: boolean;
+  }
 ) {
   const session = await auth();
   if (!session?.user) return { error: "Not authenticated" };
@@ -227,6 +244,9 @@ export async function createClubResource(
         url: data.url.trim(),
         description: data.description?.trim() || null,
         type: data.type ?? "LINK",
+        category: data.category ?? "RESOURCE",
+        dueAt: data.dueAt ? new Date(data.dueAt) : null,
+        membersOnly: data.membersOnly ?? true,
       },
     });
 
@@ -240,7 +260,15 @@ export async function createClubResource(
 
 export async function updateClubResource(
   resourceId: string,
-  data: { name: string; url: string; description?: string; type?: "LINK" | "DOCUMENT" | "PDF" | "SPREADSHEET" | "VIDEO" | "OTHER" }
+  data: {
+    name: string;
+    url: string;
+    description?: string;
+    type?: ResourceType;
+    category?: ResourceCategory;
+    dueAt?: string | null;
+    membersOnly?: boolean;
+  }
 ) {
   const session = await auth();
   if (!session?.user) return { error: "Not authenticated" };
@@ -263,6 +291,9 @@ export async function updateClubResource(
         url: data.url.trim(),
         description: data.description?.trim() || null,
         type: data.type ?? "LINK",
+        category: data.category ?? "RESOURCE",
+        dueAt: data.dueAt ? new Date(data.dueAt) : null,
+        membersOnly: data.membersOnly ?? true,
       },
     });
 
@@ -271,6 +302,84 @@ export async function updateClubResource(
   } catch (err) {
     console.error("[updateClubResource]", err);
     return { error: "Failed to update resource" };
+  }
+}
+
+export async function updateClubWorkspace(
+  clubId: string,
+  data: { workspaceTitle?: string; workspaceDescription?: string }
+) {
+  const session = await auth();
+  if (!session?.user) return { error: "Not authenticated" };
+
+  if (!(await canManageClub(clubId, session.user.id, session.user.role))) {
+    return { error: "You must be a club leader to edit the workspace" };
+  }
+
+  try {
+    const club = await prisma.club.update({
+      where: { id: clubId },
+      data: {
+        workspaceTitle: data.workspaceTitle?.trim() || null,
+        workspaceDescription: data.workspaceDescription?.trim() || null,
+      },
+      select: {
+        workspaceTitle: true,
+        workspaceDescription: true,
+        slug: true,
+      },
+    });
+
+    revalidatePath(`/clubs/${club.slug}`);
+    revalidatePath("/clubs");
+    return { club };
+  } catch (err) {
+    console.error("[updateClubWorkspace]", err);
+    return { error: "Failed to update workspace" };
+  }
+}
+
+export async function updateClubMemberRole(clubId: string, memberUserId: string, role: MembershipRole) {
+  const session = await auth();
+  if (!session?.user) return { error: "Not authenticated" };
+  if (!(await canManageClub(clubId, session.user.id, session.user.role))) {
+    return { error: "You must be a club leader to manage members" };
+  }
+
+  try {
+    await prisma.membership.update({
+      where: { userId_clubId: { userId: memberUserId, clubId } },
+      data: { role, status: "ACTIVE" },
+    });
+    revalidatePath("/clubs");
+    return { success: true };
+  } catch (err) {
+    console.error("[updateClubMemberRole]", err);
+    return { error: "Failed to update member role" };
+  }
+}
+
+export async function removeClubMember(clubId: string, memberUserId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Not authenticated" };
+  if (!(await canManageClub(clubId, session.user.id, session.user.role))) {
+    return { error: "You must be a club leader to manage members" };
+  }
+
+  if (memberUserId === session.user.id) {
+    return { error: "Use Leave Club if you want to remove yourself." };
+  }
+
+  try {
+    await prisma.membership.update({
+      where: { userId_clubId: { userId: memberUserId, clubId } },
+      data: { status: "INACTIVE", role: "MEMBER" },
+    });
+    revalidatePath("/clubs");
+    return { success: true };
+  } catch (err) {
+    console.error("[removeClubMember]", err);
+    return { error: "Failed to remove member" };
   }
 }
 

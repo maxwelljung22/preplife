@@ -68,11 +68,52 @@ async function getClubData(slug: string, userId: string) {
       })
     : [];
 
+  const memberUserIds = club.memberships.map((membership) => membership.userId);
+  const attendanceRecords = memberUserIds.length
+    ? await prisma.attendanceRecord.findMany({
+        where: {
+          userId: { in: memberUserIds },
+          session: { clubId: club.id },
+        },
+        orderBy: { joinedAt: "desc" },
+        select: {
+          userId: true,
+          status: true,
+          joinedAt: true,
+          checkIn: true,
+          session: {
+            select: {
+              id: true,
+              title: true,
+              date: true,
+            },
+          },
+        },
+      })
+    : [];
+
+  const attendanceByUser = Object.fromEntries(
+    memberUserIds.map((memberId) => {
+      const records = attendanceRecords.filter((record) => record.userId === memberId);
+      return [
+        memberId,
+        {
+          total: records.length,
+          present: records.filter((record) => record.status === "PRESENT").length,
+          late: records.filter((record) => record.status === "LATE").length,
+          joined: records.filter((record) => record.status === "JOINED").length,
+          recent: records.slice(0, 6),
+        },
+      ];
+    })
+  );
+
   return {
     club,
     membership,
     userVotes: Object.fromEntries(userVotes.map((v) => [v.pollId, v.optionId])),
     isLeader: canManageClubMembershipRole(membership?.role),
+    attendanceByUser,
   };
 }
 

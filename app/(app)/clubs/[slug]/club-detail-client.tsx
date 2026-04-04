@@ -1,19 +1,18 @@
 // app/(app)/clubs/[slug]/club-detail-client.tsx
 "use client";
 
-import { useState, useTransition, useOptimistic } from "react";
+import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { format, isToday, isTomorrow } from "date-fns";
+import { format } from "date-fns";
 import {
-  ArrowLeft, Calendar, MapPin, Clock, Users,
-  FileText, Link2, ExternalLink, ChevronRight,
-  CheckCircle, XCircle, AlertCircle, Pencil, Trash2,
+  ArrowLeft, MapPin, Clock,
+  ExternalLink,
+  CheckCircle, XCircle, AlertCircle, Pencil, Trash2, Mail, Shield, GraduationCap, UserRound, LayoutGrid,
 } from "lucide-react";
 import { joinClub, leaveClub } from "../actions";
 import {
   submitApplication,
-  castVote,
   createPost,
   createClubEvent,
   createClubResource,
@@ -23,12 +22,14 @@ import {
   deleteClubEvent,
   updateClubResource,
   deleteClubResource,
+  updateClubWorkspace,
+  updateClubMemberRole,
+  removeClubMember,
 } from "./actions";
 import { cn, formatRelativeTime, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import type { UserRole } from "@prisma/client";
+import type { MembershipRole, UserRole } from "@prisma/client";
 import { getClubLeadershipRoleLabel } from "@/lib/roles";
 
 const TABS = [
@@ -36,21 +37,21 @@ const TABS = [
   { id: "announcements", label: "Announcements" },
   { id: "events",        label: "Events" },
   { id: "members",       label: "Members" },
-  { id: "resources",     label: "Resources" },
+  { id: "workspace",     label: "Workspace" },
   { id: "applications",  label: "Apply", requiresApp: true },
 ];
 
 interface Props {
   club: any;
   membership: any;
-  userVotes: Record<string, string>;
   isLeader: boolean;
   userId: string;
   userRole: UserRole;
   defaultTab: string;
+  attendanceByUser: Record<string, any>;
 }
 
-export function ClubDetailClient({ club, membership, userVotes, isLeader, userId, userRole, defaultTab }: Props) {
+export function ClubDetailClient({ club, membership, isLeader, userId, userRole, defaultTab, attendanceByUser }: Props) {
   const [tab, setTab] = useState(defaultTab);
   const [joined, setJoined] = useState(membership?.status === "ACTIVE");
   const [memberCount, setMemberCount] = useState(club._count.memberships);
@@ -59,6 +60,7 @@ export function ClubDetailClient({ club, membership, userVotes, isLeader, userId
 
   const isAdmin = userRole === "ADMIN";
   const canManage = isAdmin || isLeader;
+  const canAccessWorkspace = joined || canManage;
 
   const handleToggle = () => {
     const next = !joined;
@@ -77,7 +79,10 @@ export function ClubDetailClient({ club, membership, userVotes, isLeader, userId
     });
   };
 
-  const visibleTabs = TABS.filter((t) => !t.requiresApp || club.requiresApp);
+  const visibleTabs = TABS.filter((t) => {
+    if (t.id === "workspace" && !canAccessWorkspace) return false;
+    return !t.requiresApp || club.requiresApp;
+  });
 
   return (
     <div className="space-y-6">
@@ -164,8 +169,8 @@ export function ClubDetailClient({ club, membership, userVotes, isLeader, userId
           {tab === "overview"      && <OverviewTab club={club} memberCount={memberCount} />}
           {tab === "announcements" && <AnnouncementsTab club={club} canManage={canManage} userId={userId} />}
           {tab === "events"        && <EventsTab club={club} canManage={canManage} />}
-          {tab === "members"       && <MembersTab members={club.memberships} />}
-          {tab === "resources"     && <ResourcesTab club={club} resources={club.resources} canManage={canManage} />}
+          {tab === "members"       && <MembersTab clubId={club.id} slug={club.slug} members={club.memberships} canManage={canManage} currentUserId={userId} attendanceByUser={attendanceByUser} />}
+          {tab === "workspace"     && <WorkspaceTab club={club} resources={club.resources} canManage={canManage} canAccessWorkspace={canAccessWorkspace} />}
           {tab === "applications"  && <ApplicationsTab club={club} userId={userId} />}
         </motion.div>
       </AnimatePresence>
@@ -695,44 +700,250 @@ function EventsTab({ club, canManage }: { club: any; canManage: boolean }) {
 }
 
 // ─── Members Tab ──────────────────────────────────────────────────────────────
-function MembersTab({ members }: { members: any[] }) {
+function MembersTab({
+  clubId,
+  slug,
+  members,
+  canManage,
+  currentUserId,
+  attendanceByUser,
+}: {
+  clubId: string;
+  slug: string;
+  members: any[];
+  canManage: boolean;
+  currentUserId: string;
+  attendanceByUser: Record<string, any>;
+}) {
+  const [items, setItems] = useState(members);
+  const [selectedMember, setSelectedMember] = useState<any | null>(null);
+  const [savingMemberId, setSavingMemberId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleRoleChange = async (memberUserId: string, nextRole: MembershipRole) => {
+    setSavingMemberId(memberUserId);
+    const result = await updateClubMemberRole(clubId, memberUserId, nextRole);
+    setSavingMemberId(null);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+      return;
+    }
+    setItems((current: any[]) => current.map((member) => (
+      member.userId === memberUserId ? { ...member, role: nextRole } : member
+    )));
+    if (selectedMember?.userId === memberUserId) {
+      setSelectedMember((current: any) => current ? { ...current, role: nextRole } : current);
+    }
+    toast({ title: "Member updated ✓" });
+  };
+
+  const handleRemove = async (memberUserId: string) => {
+    setSavingMemberId(memberUserId);
+    const result = await removeClubMember(clubId, memberUserId);
+    setSavingMemberId(null);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+      return;
+    }
+    setItems((current: any[]) => current.filter((member) => member.userId !== memberUserId));
+    if (selectedMember?.userId === memberUserId) setSelectedMember(null);
+    toast({ title: "Member removed" });
+  };
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl">
-      {members.map((m: any, i: number) => (
-        <motion.div
-          key={m.id}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0, transition: { delay: i * 0.03 } }}
-          className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 shadow-card"
-        >
-          <Avatar className="h-9 w-9 flex-shrink-0">
-            <AvatarImage src={m.user.image} />
-            <AvatarFallback className="bg-gradient-to-br from-navy to-crimson text-white text-xs font-bold">
-              {initials(m.user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-foreground truncate">{m.user.name}</p>
-            <p className="text-[11px] text-muted-foreground">{getClubLeadershipRoleLabel(m.role)}</p>
-          </div>
-        </motion.div>
-      ))}
-      {members.length === 0 && (
-        <div className="col-span-full text-center py-14">
-          <div className="text-4xl opacity-30 mb-3">👥</div>
-          <p className="font-display text-[17px] text-muted-foreground">No members yet</p>
+    <>
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <p className="text-[13px] font-bold text-foreground">Club roster</p>
+          <p className="mt-1 text-[12.5px] text-muted-foreground">
+            Click a member to view their profile, contact details, and club attendance history.
+          </p>
         </div>
-      )}
-    </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((member: any, i: number) => {
+            const summary = attendanceByUser[member.userId] ?? { total: 0, present: 0, late: 0, joined: 0, recent: [] };
+            return (
+              <motion.button
+                key={member.id}
+                type="button"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0, transition: { delay: i * 0.03 } }}
+                onClick={() => setSelectedMember(member)}
+                className="rounded-2xl border border-border bg-card p-4 text-left shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 flex-shrink-0">
+                    <AvatarImage src={member.user.image} />
+                    <AvatarFallback className="bg-gradient-to-br from-navy to-crimson text-white text-xs font-bold">
+                      {initials(member.user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-foreground">{member.user.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{getClubLeadershipRoleLabel(member.role)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-muted/60 px-3 py-2">
+                    <p className="text-[15px] font-semibold text-foreground">{summary.present}</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Present</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 px-3 py-2">
+                    <p className="text-[15px] font-semibold text-foreground">{summary.late}</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Late</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 px-3 py-2">
+                    <p className="text-[15px] font-semibold text-foreground">{summary.total}</p>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Total</p>
+                  </div>
+                </div>
+              </motion.button>
+            );
+          })}
+          {items.length === 0 && (
+            <div className="col-span-full py-14 text-center">
+              <div className="mb-3 text-4xl opacity-30">👥</div>
+              <p className="font-display text-[17px] text-muted-foreground">No members yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {selectedMember ? (
+          <motion.div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.98 }} className="w-full max-w-3xl rounded-[2rem] border border-border bg-background p-6 shadow-[0_30px_90px_rgba(15,23,42,0.2)]">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-14 w-14">
+                    <AvatarImage src={selectedMember.user.image} />
+                    <AvatarFallback className="bg-gradient-to-br from-navy to-crimson text-white text-sm font-bold">
+                      {initials(selectedMember.user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-[1.3rem] font-semibold text-foreground">{selectedMember.user.name}</p>
+                    <p className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">{getClubLeadershipRoleLabel(selectedMember.role)}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedMember(null)} className="rounded-xl border border-border px-3 py-2 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-6 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Profile</p>
+                    <div className="mt-4 space-y-3">
+                      <div className="flex items-center gap-3 text-[13px] text-foreground"><Mail className="h-4 w-4 text-muted-foreground" /> {selectedMember.user.email || "No email available"}</div>
+                      <div className="flex items-center gap-3 text-[13px] text-foreground"><GraduationCap className="h-4 w-4 text-muted-foreground" /> Grade {selectedMember.user.grade ?? "Not set"}</div>
+                      <div className="flex items-center gap-3 text-[13px] text-foreground"><UserRound className="h-4 w-4 text-muted-foreground" /> Joined {format(new Date(selectedMember.joinedAt), "MMM d, yyyy")}</div>
+                    </div>
+                  </div>
+
+                  {canManage ? (
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Leader actions</p>
+                      <div className="mt-4 space-y-3">
+                        <select
+                          value={selectedMember.role}
+                          onChange={(e) => handleRoleChange(selectedMember.userId, e.target.value as MembershipRole)}
+                          disabled={savingMemberId === selectedMember.userId}
+                          className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13px] outline-none"
+                        >
+                          {["MEMBER", "OFFICER", "PRESIDENT", "FACULTY_ADVISOR"].map((role) => (
+                            <option key={role} value={role}>{getClubLeadershipRoleLabel(role as MembershipRole)}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => handleRemove(selectedMember.userId)}
+                          disabled={savingMemberId === selectedMember.userId || selectedMember.userId === currentUserId}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Shield className="h-4 w-4" />
+                          Remove from club
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Attendance in this club</p>
+                  {(() => {
+                    const summary = attendanceByUser[selectedMember.userId] ?? { total: 0, present: 0, late: 0, joined: 0, recent: [] };
+                    return (
+                      <>
+                        <div className="mt-4 grid grid-cols-4 gap-3">
+                          {[
+                            { label: "Total", value: summary.total },
+                            { label: "Present", value: summary.present },
+                            { label: "Late", value: summary.late },
+                            { label: "Pending", value: summary.joined },
+                          ].map((item) => (
+                            <div key={item.label} className="rounded-xl bg-muted/60 px-3 py-3 text-center">
+                              <p className="text-[1.05rem] font-semibold text-foreground">{item.value}</p>
+                              <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{item.label}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-5 space-y-3">
+                          {summary.recent.length === 0 ? (
+                            <p className="rounded-xl bg-muted/50 px-4 py-4 text-[13px] text-muted-foreground">No attendance records yet.</p>
+                          ) : summary.recent.map((record: any) => (
+                            <div key={`${record.session.id}-${record.joinedAt}`} className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[13px] font-semibold text-foreground">{record.session.title}</p>
+                                  <p className="text-[11.5px] text-muted-foreground">{format(new Date(record.session.date), "MMM d, yyyy")}</p>
+                                </div>
+                                <span className="rounded-full bg-card px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                  {record.status.toLowerCase()}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </>
   );
 }
 
-// ─── Resources Tab ────────────────────────────────────────────────────────────
-function ResourcesTab({ club, resources, canManage }: { club: any; resources: any[]; canManage: boolean }) {
+// ─── Workspace Tab ────────────────────────────────────────────────────────────
+function WorkspaceTab({
+  club,
+  resources,
+  canManage,
+  canAccessWorkspace,
+}: {
+  club: any;
+  resources: any[];
+  canManage: boolean;
+  canAccessWorkspace: boolean;
+}) {
   const typeIcon: Record<string, string> = {
     LINK: "🔗", DOCUMENT: "📄", PDF: "📋", SPREADSHEET: "📊", VIDEO: "🎬", OTHER: "📁",
   };
+  const categoryLabel: Record<string, string> = {
+    RESOURCE: "Material",
+    ASSIGNMENT: "Assignment",
+    FORM: "Form",
+  };
   const [items, setItems] = useState(resources);
+  const [workspaceMeta, setWorkspaceMeta] = useState({
+    workspaceTitle: club.workspaceTitle ?? "",
+    workspaceDescription: club.workspaceDescription ?? "",
+  });
+  const [savingMeta, setSavingMeta] = useState(false);
   const [creating, setCreating] = useState(false);
   const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -741,20 +952,36 @@ function ResourcesTab({ club, resources, canManage }: { club: any; resources: an
     url: "",
     description: "",
     type: "LINK",
+    category: "RESOURCE",
+    dueAt: "",
+    membersOnly: true,
   });
   const [editForm, setEditForm] = useState({
     name: "",
     url: "",
     description: "",
     type: "LINK",
+    category: "RESOURCE",
+    dueAt: "",
+    membersOnly: true,
   });
   const { toast } = useToast();
+
+  if (!canAccessWorkspace) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-10 text-center shadow-card">
+        <LayoutGrid className="mx-auto h-10 w-10 text-muted-foreground/50" />
+        <p className="mt-4 font-display text-[20px] text-foreground">Members-only workspace</p>
+        <p className="mt-2 text-[13.5px] text-muted-foreground">Join this club to access assignments, forms, and shared materials.</p>
+      </div>
+    );
+  }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.url.trim()) return;
     setCreating(true);
-    const result = await createClubResource(club.id, form as any);
+    const result = await createClubResource(club.id, { ...form, dueAt: form.dueAt || null } as any);
     setCreating(false);
     if (result?.error) {
       toast({ title: "Error", description: result.error, variant: "destructive" });
@@ -762,8 +989,8 @@ function ResourcesTab({ club, resources, canManage }: { club: any; resources: an
     }
     if (result?.resource) {
       setItems((current: any[]) => [result.resource, ...current]);
-      setForm({ name: "", url: "", description: "", type: "LINK" });
-      toast({ title: "Resource added ✓" });
+      setForm({ name: "", url: "", description: "", type: "LINK", category: "RESOURCE", dueAt: "", membersOnly: true });
+      toast({ title: "Workspace item added ✓" });
     }
   };
 
@@ -774,13 +1001,16 @@ function ResourcesTab({ club, resources, canManage }: { club: any; resources: an
       url: resource.url ?? "",
       description: resource.description ?? "",
       type: resource.type ?? "LINK",
+      category: resource.category ?? "RESOURCE",
+      dueAt: resource.dueAt ? new Date(resource.dueAt).toISOString().slice(0, 16) : "",
+      membersOnly: resource.membersOnly ?? true,
     });
   };
 
   const handleSaveEdit = async (resourceId: string) => {
     if (!editForm.name.trim() || !editForm.url.trim()) return;
     setSavingEdit(true);
-    const result = await updateClubResource(resourceId, editForm as any);
+    const result = await updateClubResource(resourceId, { ...editForm, dueAt: editForm.dueAt || null } as any);
     setSavingEdit(false);
     if (result?.error) {
       toast({ title: "Error", description: result.error, variant: "destructive" });
@@ -789,7 +1019,7 @@ function ResourcesTab({ club, resources, canManage }: { club: any; resources: an
     if (result?.resource) {
       setItems((current: any[]) => current.map((item) => (item.id === resourceId ? result.resource : item)));
       setEditingResourceId(null);
-      toast({ title: "Resource updated ✓" });
+      toast({ title: "Workspace item updated ✓" });
     }
   };
 
@@ -800,136 +1030,155 @@ function ResourcesTab({ club, resources, canManage }: { club: any; resources: an
       return;
     }
     setItems((current: any[]) => current.filter((item) => item.id !== resourceId));
-    toast({ title: "Resource deleted" });
+    toast({ title: "Workspace item deleted" });
+  };
+
+  const handleWorkspaceSave = async () => {
+    setSavingMeta(true);
+    const result = await updateClubWorkspace(club.id, workspaceMeta);
+    setSavingMeta(false);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Workspace updated ✓" });
+  };
+
+  const groupedItems = {
+    assignments: items.filter((item: any) => item.category === "ASSIGNMENT"),
+    forms: items.filter((item: any) => item.category === "FORM"),
+    materials: items.filter((item: any) => item.category === "RESOURCE"),
   };
 
   return (
-    <div className="space-y-2.5 max-w-lg">
-      {canManage && (
-        <form onSubmit={handleCreate} className="bg-card border border-border rounded-2xl p-5 shadow-card space-y-3">
-          <p className="text-[13px] font-bold text-foreground">Share Resource</p>
-          <input
-            value={form.name}
-            onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))}
-            placeholder="Resource title…"
-            className="w-full px-4 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] outline-none focus:bg-card focus:border-border focus:ring-2 focus:ring-crimson/10 transition-all"
-          />
-          <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-            <input
-              value={form.url}
-              onChange={(e) => setForm((current) => ({ ...current, url: e.target.value }))}
-              placeholder="https://…"
-              className="w-full px-4 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] outline-none focus:bg-card focus:border-border focus:ring-2 focus:ring-crimson/10 transition-all"
-            />
-            <select
-              value={form.type}
-              onChange={(e) => setForm((current) => ({ ...current, type: e.target.value }))}
-              className="w-full px-4 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] outline-none focus:bg-card focus:border-border transition-all"
-            >
-              {Object.keys(typeIcon).map((type) => (
-                <option key={type} value={type}>
-                  {type.toLowerCase()}
-                </option>
-              ))}
+    <div className="space-y-5">
+      <div className="rounded-[1.8rem] border border-border bg-card p-5 shadow-card">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Workspace</p>
+        {canManage ? (
+          <div className="mt-4 grid gap-3">
+            <input value={workspaceMeta.workspaceTitle} onChange={(e) => setWorkspaceMeta((current) => ({ ...current, workspaceTitle: e.target.value }))} placeholder="Workspace title" className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+            <textarea value={workspaceMeta.workspaceDescription} onChange={(e) => setWorkspaceMeta((current) => ({ ...current, workspaceDescription: e.target.value }))} placeholder="Describe how this club uses its member workspace…" rows={3} className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+            <div className="flex justify-end">
+              <button onClick={handleWorkspaceSave} disabled={savingMeta} className="rounded-xl bg-crimson px-4 py-2 text-[12.5px] font-medium text-white transition-colors hover:bg-crimson/90 disabled:opacity-50">
+                {savingMeta ? "Saving…" : "Save workspace"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="mt-3 font-display text-[1.5rem] text-foreground">{club.workspaceTitle || `${club.name} workspace`}</p>
+            <p className="mt-2 max-w-3xl text-[13.5px] leading-6 text-muted-foreground">{club.workspaceDescription || "Shared assignments, forms, and club materials live here for active members."}</p>
+          </>
+        )}
+      </div>
+
+      {canManage ? (
+        <form onSubmit={handleCreate} className="rounded-[1.8rem] border border-border bg-card p-5 shadow-card space-y-3">
+          <p className="text-[13px] font-bold text-foreground">Add workspace item</p>
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px]">
+            <input value={form.name} onChange={(e) => setForm((current) => ({ ...current, name: e.target.value }))} placeholder="Item title…" className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+            <select value={form.category} onChange={(e) => setForm((current) => ({ ...current, category: e.target.value }))} className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card">
+              <option value="RESOURCE">Material</option>
+              <option value="ASSIGNMENT">Assignment</option>
+              <option value="FORM">Form</option>
             </select>
           </div>
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
-            placeholder="Why members should open this…"
-            rows={3}
-            className="w-full px-4 py-2.5 bg-muted border border-transparent rounded-xl text-[13.5px] resize-none outline-none focus:bg-card focus:border-border focus:ring-2 focus:ring-crimson/10 transition-all"
-          />
+          <div className="grid gap-3 lg:grid-cols-[1fr_160px_180px]">
+            <input value={form.url} onChange={(e) => setForm((current) => ({ ...current, url: e.target.value }))} placeholder="https://…" className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+            <select value={form.type} onChange={(e) => setForm((current) => ({ ...current, type: e.target.value }))} className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card">
+              {Object.keys(typeIcon).map((type) => (
+                <option key={type} value={type}>{type.toLowerCase()}</option>
+              ))}
+            </select>
+            <input type="datetime-local" value={form.dueAt} onChange={(e) => setForm((current) => ({ ...current, dueAt: e.target.value }))} className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+          </div>
+          <textarea value={form.description} onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))} placeholder="Add notes or instructions…" rows={3} className="w-full rounded-xl border border-transparent bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:border-border focus:bg-card" />
+          <label className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+            <input type="checkbox" checked={form.membersOnly} onChange={(e) => setForm((current) => ({ ...current, membersOnly: e.target.checked }))} />
+            Limit this item to club members
+          </label>
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={creating || !form.name.trim() || !form.url.trim()}
-              className="px-5 py-2 bg-crimson text-white rounded-xl text-[13px] font-medium hover:bg-crimson/90 disabled:opacity-50 transition-all shadow-md shadow-crimson/20"
-            >
-              {creating ? "Adding…" : "Add resource"}
+            <button type="submit" disabled={creating || !form.name.trim() || !form.url.trim()} className="rounded-xl bg-crimson px-5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-crimson/90 disabled:opacity-50">
+              {creating ? "Adding…" : "Add item"}
             </button>
           </div>
         </form>
-      )}
+      ) : null}
 
-      {items.length === 0 ? (
-        <div className="text-center py-14">
-          <div className="text-4xl opacity-30 mb-3">📁</div>
-          <p className="font-display text-[17px] text-muted-foreground">No resources posted</p>
-        </div>
-      ) : (
-        items.map((r: any, i: number) => (
-          <motion.div
-            key={r.id}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0, transition: { delay: i * 0.04 } }}
-            className="bg-card border border-border rounded-xl p-3.5 transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5"
-          >
-            {editingResourceId === r.id ? (
-              <div className="space-y-3">
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((current) => ({ ...current, name: e.target.value }))}
-                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card focus:ring-2 focus:ring-crimson/10"
-                />
-                <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
-                  <input
-                    value={editForm.url}
-                    onChange={(e) => setEditForm((current) => ({ ...current, url: e.target.value }))}
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card focus:ring-2 focus:ring-crimson/10"
-                  />
-                  <select
-                    value={editForm.type}
-                    onChange={(e) => setEditForm((current) => ({ ...current, type: e.target.value }))}
-                    className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card"
-                  >
-                    {Object.keys(typeIcon).map((type) => (
-                      <option key={type} value={type}>{type.toLowerCase()}</option>
-                    ))}
-                  </select>
+      <div className="grid gap-5 xl:grid-cols-3">
+        {[
+          { title: "Assignments", items: groupedItems.assignments },
+          { title: "Forms", items: groupedItems.forms },
+          { title: "Materials", items: groupedItems.materials },
+        ].map((section) => (
+          <div key={section.title} className="rounded-[1.8rem] border border-border bg-card p-4 shadow-card">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{section.title}</p>
+            <div className="mt-4 space-y-3">
+              {section.items.length === 0 ? (
+                <p className="rounded-xl bg-muted/50 px-4 py-4 text-[12.5px] text-muted-foreground">Nothing posted yet.</p>
+              ) : section.items.map((resource: any) => (
+                <div key={resource.id} className="rounded-xl border border-border bg-muted/30 p-3">
+                  {editingResourceId === resource.id ? (
+                    <div className="space-y-3">
+                      <input value={editForm.name} onChange={(e) => setEditForm((current) => ({ ...current, name: e.target.value }))} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none" />
+                      <div className="grid gap-3">
+                        <input value={editForm.url} onChange={(e) => setEditForm((current) => ({ ...current, url: e.target.value }))} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none" />
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <select value={editForm.category} onChange={(e) => setEditForm((current) => ({ ...current, category: e.target.value }))} className="rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none">
+                            <option value="RESOURCE">Material</option>
+                            <option value="ASSIGNMENT">Assignment</option>
+                            <option value="FORM">Form</option>
+                          </select>
+                          <select value={editForm.type} onChange={(e) => setEditForm((current) => ({ ...current, type: e.target.value }))} className="rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none">
+                            {Object.keys(typeIcon).map((type) => (
+                              <option key={type} value={type}>{type.toLowerCase()}</option>
+                            ))}
+                          </select>
+                          <input type="datetime-local" value={editForm.dueAt} onChange={(e) => setEditForm((current) => ({ ...current, dueAt: e.target.value }))} className="rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none" />
+                        </div>
+                      </div>
+                      <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm((current) => ({ ...current, description: e.target.value }))} className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-[13px] outline-none" />
+                      <label className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                        <input type="checkbox" checked={editForm.membersOnly} onChange={(e) => setEditForm((current) => ({ ...current, membersOnly: e.target.checked }))} />
+                        Members only
+                      </label>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setEditingResourceId(null)} className="rounded-xl border border-border px-4 py-2 text-[12px] font-medium text-foreground transition-colors hover:bg-muted">Cancel</button>
+                        <button onClick={() => handleSaveEdit(resource.id)} disabled={savingEdit} className="rounded-xl bg-crimson px-4 py-2 text-[12px] font-medium text-white transition-colors hover:bg-crimson/90 disabled:opacity-50">
+                          {savingEdit ? "Saving…" : "Save"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1">
+                          <p className="text-[13.5px] font-semibold text-foreground">{resource.name}</p>
+                          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{categoryLabel[resource.category]} · {typeIcon[resource.type] ?? "📁"} {resource.type.toLowerCase()}</p>
+                        </a>
+                        {canManage ? (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleStartEdit(resource)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><Pencil className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => handleDelete(resource.id)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                          </div>
+                        ) : null}
+                      </div>
+                      {resource.description ? <p className="text-[12.5px] leading-5 text-muted-foreground">{resource.description}</p> : null}
+                      <div className="flex flex-wrap gap-2">
+                        {resource.membersOnly ? <span className="rounded-full bg-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Members only</span> : null}
+                        {resource.dueAt ? <span className="rounded-full bg-background px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Due {format(new Date(resource.dueAt), "MMM d")}</span> : null}
+                      </div>
+                      <a href={resource.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-crimson">
+                        Open item <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  )}
                 </div>
-                <textarea
-                  rows={3}
-                  value={editForm.description}
-                  onChange={(e) => setEditForm((current) => ({ ...current, description: e.target.value }))}
-                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card focus:ring-2 focus:ring-crimson/10"
-                />
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditingResourceId(null)} className="rounded-xl border border-border px-4 py-2 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted">
-                    Cancel
-                  </button>
-                  <button onClick={() => handleSaveEdit(r.id)} disabled={savingEdit} className="rounded-xl bg-crimson px-4 py-2 text-[12.5px] font-medium text-white transition-colors hover:bg-crimson/90 disabled:opacity-50">
-                    {savingEdit ? "Saving…" : "Save"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3.5">
-                <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 flex-1 items-center gap-3.5 group">
-                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-lg flex-shrink-0">
-                    {typeIcon[r.type] ?? "📁"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13.5px] font-semibold text-foreground group-hover:text-crimson transition-colors">{r.name}</p>
-                    {r.description && <p className="text-[11.5px] text-muted-foreground">{r.description}</p>}
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/50 group-hover:text-crimson transition-colors" />
-                </a>
-                {canManage && (
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => handleStartEdit(r)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Edit resource">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => handleDelete(r.id)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20" aria-label="Delete resource">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </motion.div>
-        ))
-      )}
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
