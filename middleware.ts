@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { applySecurityHeaders } from "@/lib/security";
 
 const PROTECTED = [
   "/dashboard",
@@ -31,22 +32,22 @@ export default auth((req: any) => {
   if ((isProtected || isAdmin || isFaculty) && !session?.user) {
     const url = new URL("/auth/signin", nextUrl.origin);
     url.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(url);
+    return applySecurityHeaders(NextResponse.redirect(url));
   }
 
   if (isAdmin && session?.user?.role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin));
+    return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin)));
   }
 
   if (isFaculty && session?.user?.role !== "ADMIN" && session?.user?.role !== "FACULTY") {
-    return NextResponse.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin));
+    return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin)));
   }
 
   if (pathname.startsWith("/auth/signin") && session?.user) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl.origin));
+    return applySecurityHeaders(NextResponse.redirect(new URL("/dashboard", nextUrl.origin)));
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next());
 });
 
 export const config = {

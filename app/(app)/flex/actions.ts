@@ -34,74 +34,100 @@ export async function joinFlexSession(sessionId: string) {
   if (!user) return { error: "You need to sign in first." };
   const { dayStart, dayEnd } = getFlexBlockWindow();
 
-  const session = await prisma.attendanceSession.findUnique({
-    where: { id: sessionId },
-    include: {
-      records: {
-        select: { id: true, userId: true, status: true },
-      },
-      club: {
-        select: { name: true },
-      },
-    },
-  });
+  let result:
+    | { success: true; sessionId: string; status: "JOINED" | "PRESENT" | "LATE" }
+    | { error: string };
 
-  if (!session || session.date < dayStart || session.date >= dayEnd || !session.isOpen) {
-    return { error: "That session is not open right now." };
-  }
-
-  const attendeeCount = session.records.length;
-  const existingRecord = await prisma.attendanceRecord.findFirst({
-    where: {
-      userId: user.id,
-      session: {
-        date: {
-          gte: dayStart,
-          lt: dayEnd,
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const session = await tx.attendanceSession.findUnique({
+        where: { id: sessionId },
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          isOpen: true,
+          capacity: true,
         },
-      },
-    },
-    include: {
-      session: {
-        select: { id: true, title: true },
-      },
-    },
-    orderBy: { joinedAt: "desc" },
-  });
+      });
 
-  if (existingRecord?.sessionId === sessionId) {
-    return { success: true, sessionId, status: existingRecord.status };
-  }
+      if (!session || session.date < dayStart || session.date >= dayEnd || !session.isOpen) {
+        return { error: "That session is not open right now." } as const;
+      }
 
-  if (existingRecord && existingRecord.status !== "JOINED") {
-    return { error: `You already checked into ${existingRecord.session.title}. You can't switch after scanning.` };
-  }
+      const existingRecord = await tx.attendanceRecord.findFirst({
+        where: {
+          userId: user.id,
+          session: {
+            date: {
+              gte: dayStart,
+              lt: dayEnd,
+            },
+          },
+        },
+        include: {
+          session: {
+            select: { id: true, title: true },
+          },
+        },
+        orderBy: { joinedAt: "desc" },
+      });
 
-  if (!existingRecord && attendeeCount >= session.capacity) {
-    return { error: "This session is at capacity." };
-  }
+      if (existingRecord?.sessionId === sessionId) {
+        return { success: true, sessionId, status: existingRecord.status } as const;
+      }
 
-  if (existingRecord) {
-    await prisma.attendanceRecord.delete({
-      where: { id: existingRecord.id },
+      if (existingRecord && existingRecord.status !== "JOINED") {
+        return {
+          error: `You already checked into ${existingRecord.session.title}. You can't switch after scanning.`,
+        } as const;
+      }
+
+      const attendeeCount = await tx.attendanceRecord.count({
+        where: { sessionId },
+      });
+
+      if (!existingRecord && attendeeCount >= session.capacity) {
+        return { error: "This session is at capacity." } as const;
+      }
+
+      if (existingRecord) {
+        await tx.attendanceRecord.delete({
+          where: { id: existingRecord.id },
+        });
+      }
+
+      await tx.attendanceRecord.create({
+        data: {
+          sessionId,
+          userId: user.id,
+          status: "JOINED",
+          present: false,
+          joinedAt: new Date(),
+          checkIn: null,
+        },
+      });
+
+      return { success: true, sessionId, status: "JOINED" as const };
+    }, {
+      isolationLevel: "Serializable",
     });
+  } catch (error: any) {
+    if (error?.code === "P2034") {
+      return { error: "A lot of students are joining right now. Please try again." };
+    }
+
+    throw error;
   }
 
-  await prisma.attendanceRecord.create({
-    data: {
-      sessionId,
-      userId: user.id,
-      status: "JOINED",
-      present: false,
-      joinedAt: new Date(),
-      checkIn: null,
-    },
-  });
+  if ("error" in result) {
+    return result;
+  }
 
   revalidatePath("/flex");
   revalidatePath("/dashboard");
 
-  return { success: true, sessionId, status: "JOINED" as const };
+  return result;
 }
 
 export async function createFlexSession(input: CreateSessionInput) {

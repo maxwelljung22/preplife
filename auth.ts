@@ -7,10 +7,11 @@ import { getAuthEnv } from "@/lib/env";
 import type { UserRole } from "@prisma/client";
 import type { JWT } from "next-auth/jwt";
 import { getDefaultRoleForEmail, resolveRoleForUser } from "@/lib/roles";
+import { getServerSecret } from "@/lib/server-secrets";
 
 const authEnv = getAuthEnv({ strict: false });
 const googleConfigured = Boolean(authEnv.googleClientId && authEnv.googleClientSecret);
-const authSecret = authEnv.nextAuthSecret || "hawklife-fallback-secret";
+const authSecret = authEnv.nextAuthSecret || getServerSecret("NEXTAUTH_SECRET", "hawklife-dev-secret");
 
 function isAllowedEmail(email: string): boolean {
   return getDefaultRoleForEmail(email) !== null;

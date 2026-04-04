@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import type { AttendanceSession, AttendanceSessionType, AttendanceStatus, MembershipRole, UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { canAccessFacultyTools } from "@/lib/roles";
+import { getServerSecret } from "@/lib/server-secrets";
 
 const FLEX_START_HOUR = 14;
 const FLEX_START_MINUTE = 5;
@@ -77,7 +78,7 @@ export function getSessionAccent(type: AttendanceSessionType) {
 }
 
 function getSigningKey() {
-  return process.env.NEXTAUTH_SECRET || "hawklife-flex-secret";
+  return getServerSecret("NEXTAUTH_SECRET", "hawklife-flex-dev-secret");
 }
 
 function signSessionPayload(sessionId: string, timestamp: number, qrCode: string) {

@@ -4,17 +4,37 @@ import { prisma } from "@/lib/prisma";
 import { canAccessFacultyTools } from "@/lib/roles";
 import { canManageClubAttendanceSession, createQrValue } from "@/lib/flex-attendance";
 import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
+import {
+  applySecurityHeaders,
+  checkRateLimit,
+  getRequestIp,
+  withRateLimitHeaders,
+} from "@/lib/security";
 
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return applySecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
   if (!sessionId) {
-    return NextResponse.json({ error: "Missing session id" }, { status: 400 });
+    return applySecurityHeaders(NextResponse.json({ error: "Missing session id" }, { status: 400 }));
+  }
+
+  const rateLimit = checkRateLimit({
+    key: `flex-qr:${session.user.id}:${getRequestIp(request)}:${sessionId}`,
+    limit: 90,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.success) {
+    return applySecurityHeaders(
+      withRateLimitHeaders(
+        NextResponse.json({ error: "Too many QR refresh requests. Please wait a moment." }, { status: 429 }),
+        rateLimit
+      )
+    );
   }
 
   let attendanceSession;
@@ -32,9 +52,14 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (isPrismaMissingColumnError(error, "Attendance")) {
-      return NextResponse.json(
-        { error: "The attendance schema has not been applied to this deployment yet." },
-        { status: 503 }
+      return applySecurityHeaders(
+        withRateLimitHeaders(
+          NextResponse.json(
+            { error: "The attendance schema has not been applied to this deployment yet." },
+            { status: 503 }
+          ),
+          rateLimit
+        )
       );
     }
 
@@ -42,7 +67,9 @@ export async function GET(request: Request) {
   }
 
   if (!attendanceSession) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return applySecurityHeaders(
+      withRateLimitHeaders(NextResponse.json({ error: "Session not found" }, { status: 404 }), rateLimit)
+    );
   }
 
   const canManage = attendanceSession.clubId
@@ -50,15 +77,22 @@ export async function GET(request: Request) {
     : canAccessFacultyTools(session.user.role) || attendanceSession.createdById === session.user.id;
 
   if (!canManage) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return applySecurityHeaders(
+      withRateLimitHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }), rateLimit)
+    );
   }
 
   const qrValue = createQrValue(attendanceSession);
 
-  return NextResponse.json({
-    qrValue,
-    expiresAt: Date.now() + attendanceSession.qrRefreshSeconds * 1000,
-    title: attendanceSession.title,
-    refreshSeconds: attendanceSession.qrRefreshSeconds,
-  });
+  return applySecurityHeaders(
+    withRateLimitHeaders(
+      NextResponse.json({
+        qrValue,
+        expiresAt: Date.now() + attendanceSession.qrRefreshSeconds * 1000,
+        title: attendanceSession.title,
+        refreshSeconds: attendanceSession.qrRefreshSeconds,
+      }),
+      rateLimit
+    )
+  );
 }
