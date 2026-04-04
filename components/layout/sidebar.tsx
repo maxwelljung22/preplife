@@ -88,7 +88,7 @@ function SidebarNavContent({
       {/* Navigation */}
       <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-4 space-y-1">
         <p className="text-[9.5px] font-bold tracking-[0.14em] uppercase px-3 mb-2 mt-2" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>
-          The Prep
+          Navigation
         </p>
         {NAV_ITEMS.map((item) => (
           <Link
@@ -96,7 +96,7 @@ function SidebarNavContent({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "relative flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
+              "relative flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150 surface-hover",
               isActive(item)
                 ? "shadow-sm"
                 : "hover:-translate-y-[2px]"
@@ -144,7 +144,7 @@ function SidebarNavContent({
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
+                  "flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150 surface-hover",
                   isActive(item)
                     ? "shadow-sm"
                     : "hover:-translate-y-[2px]"

@@ -53,7 +53,7 @@ export function HomePage() {
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col gap-5 px-4 py-4 sm:px-6 sm:py-6 xl:flex-row xl:items-stretch xl:gap-6">
         <HeroPanel />
         <motion.section
-          className="relative flex min-h-[420px] flex-1 items-center justify-center overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(180deg,hsl(var(--background)/0.96),hsl(var(--muted)/0.9))] p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8 lg:p-10 xl:max-w-[430px]"
+          className="surface-panel relative flex min-h-[420px] flex-1 items-center justify-center overflow-hidden rounded-[32px] p-5 sm:p-8 lg:p-10 xl:max-w-[430px]"
           initial={{ opacity: 0, x: shouldReduce ? 0 : 20 }}
           animate={{ opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] } }}
           aria-label="Sign in"
@@ -74,11 +74,13 @@ export function HomePage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: 1.1, duration: 0.5 } }}
-            className="absolute bottom-5 left-5 right-5 hidden items-center gap-3 lg:flex"
+            className="absolute bottom-5 left-5 right-5 hidden items-center justify-between gap-4 lg:flex"
           >
-            <div className="h-px w-5 bg-border" />
-            <p className="text-[13px] italic font-light tracking-wide text-muted-foreground" style={{ fontFamily: "var(--font-display)" }}>
-              &quot;Men for Others&quot; — St. Joseph&apos;s Preparatory School, 1851
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Student platform
+            </p>
+            <p className="text-[12px] text-muted-foreground">
+              St. Joe&apos;s Prep, organized beautifully.
             </p>
           </motion.div>
         </motion.section>

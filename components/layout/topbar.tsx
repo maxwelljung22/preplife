@@ -100,7 +100,7 @@ export function Topbar({ user }: TopbarProps) {
           <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-200 w-80 shadow-[0_8px_24px_rgba(15,23,42,0.05)] hover:-translate-y-0.5 hover:shadow-card">
             <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
-              placeholder="Search The Prep…"
+              placeholder="Search HawkLife…"
               className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>

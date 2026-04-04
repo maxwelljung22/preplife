@@ -1,15 +1,22 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Megaphone, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-const FEATURE_STRIP = [
-  "Club applications",
-  "Live announcements",
-  "NHS tracking",
-  "Shared calendar",
+const FEATURE_STRIP = ["Club applications", "Live announcements", "NHS tracking", "Shared calendar"] as const;
+const FEATURE_PANELS = [
+  {
+    icon: CalendarDays,
+    title: "Everything in one week view",
+    body: "Meetings, updates, and school life all feel easier to follow.",
+  },
+  {
+    icon: Megaphone,
+    title: "Faster club communication",
+    body: "Announcements and applications stay clear, organized, and easy to act on.",
+  },
 ] as const;
 
 export function HeroPanel() {
@@ -52,7 +59,7 @@ export function HeroPanel() {
           </div>
         </div>
 
-        <div className="my-12 max-w-[680px]">
+        <div className="my-10 max-w-[700px]">
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
@@ -71,7 +78,7 @@ export function HeroPanel() {
             <motion.p
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.16 } }}
-              className="mt-5 max-w-[520px] text-balance text-[15px] leading-7 text-white/56 sm:text-[16px]"
+              className="mt-5 max-w-[540px] text-balance text-[15px] leading-7 text-white/58 sm:text-[16px]"
             >
               A cleaner home for clubs, announcements, NHS hours, and schedules at St. Joe&apos;s Prep.
             </motion.p>
@@ -79,14 +86,14 @@ export function HeroPanel() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.62, ease: EASE_OUT, delay: 0.24 } }}
-              className="mt-8 max-w-[560px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+              className="mt-8 max-w-[600px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
             >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">What you can do</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">What HawkLife does best</p>
               <p className="mt-3 text-[28px] font-semibold tracking-[-0.06em] text-white sm:text-[34px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                Student life, finally in sync.
+                Student life, without the mess.
               </p>
               <p className="mt-3 max-w-[420px] text-[13px] leading-7 text-white/52">
-                Browse clubs, track service hours, follow announcements, and keep up with everything happening across St. Joseph&apos;s Preparatory School.
+                One place for students, leaders, and faculty to keep up with what matters across St. Joseph&apos;s Preparatory School.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {FEATURE_STRIP.map((item, index) => (
@@ -103,20 +110,24 @@ export function HeroPanel() {
                 ))}
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <motion.div
-                  whileHover={reduceMotion ? undefined : { y: -3 }}
-                  className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3"
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">For students</p>
-                  <p className="mt-2 text-[13px] leading-6 text-white/72">Find your clubs, follow updates, and keep the week organized.</p>
-                </motion.div>
-                <motion.div
-                  whileHover={reduceMotion ? undefined : { y: -3 }}
-                  className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3"
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/40">For leaders</p>
-                  <p className="mt-2 text-[13px] leading-6 text-white/72">Manage applications, announcements, and club momentum in one place.</p>
-                </motion.div>
+                {FEATURE_PANELS.map((panel, index) => (
+                  <motion.div
+                    key={panel.title}
+                    whileHover={reduceMotion ? undefined : { y: -3 }}
+                    className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-4"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: 0.44 + index * 0.06, duration: 0.35, ease: EASE_OUT } }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-white/78">
+                        <panel.icon className="h-4 w-4" />
+                      </span>
+                      <ArrowUpRight className="h-4 w-4 text-white/28" />
+                    </div>
+                    <p className="mt-4 text-[14px] font-semibold tracking-[-0.03em] text-white">{panel.title}</p>
+                    <p className="mt-2 text-[12.5px] leading-6 text-white/60">{panel.body}</p>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
         </div>

@@ -103,8 +103,9 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                     Faculty use <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</code>. Students use <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</code>.
                   </p>
                 </div>
-                <div className="mt-6 border-t border-border pt-4 text-center sm:mt-7 sm:pt-5">
-                  <p className="text-[12px] leading-[1.5] text-muted-foreground">Managed by St. Joseph&apos;s Preparatory School.</p>
+                <div className="mt-6 flex items-center justify-between border-t border-border pt-4 sm:mt-7 sm:pt-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Secure school sign-in</p>
+                  <p className="text-[12px] leading-[1.5] text-muted-foreground">The Prep</p>
                 </div>
               </motion.div>
             )}

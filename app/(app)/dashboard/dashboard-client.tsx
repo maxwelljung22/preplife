@@ -59,7 +59,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               {greeting}, {firstName}. HawkLife is ready.
             </h1>
             <p className="mt-4 max-w-[560px] text-[15px] leading-[1.7] text-foreground/72 dark:text-white/52">
-              Your clubs, announcements, meetings, NHS hours, and applications all move in one cleaner system built for The Prep.
+              Your clubs, announcements, meetings, NHS hours, and applications all move in one cleaner system for St. Joe&apos;s Prep.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -68,7 +68,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
                 { num: upcomingEvents.length, label: "This Week" },
                 { num: unreadNotifs, label: "Unread" },
               ].map((s) => (
-                <div key={s.label} className="rounded-[24px] border border-border bg-background/70 px-4 py-4 backdrop-blur-md dark:border-white/8 dark:bg-white/[0.04]">
+                <div key={s.label} className="rounded-[24px] border border-border bg-background/70 px-4 py-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card dark:border-white/8 dark:bg-white/[0.04]">
                   <p className="text-foreground dark:text-white" style={{ fontFamily: "Satoshi, var(--font-body)", fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{s.num}</p>
                   <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[.09em] text-muted-foreground dark:text-white/34">{s.label}</p>
                 </div>
@@ -81,7 +81,7 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <Link key={action.href} href={action.href}>
                 <motion.div
                   {...fu(0.08 + index * 0.05)}
-                  className="group rounded-[28px] border border-border bg-background/70 p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:bg-background dark:border-white/8 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]"
+                  className="group rounded-[28px] border border-border bg-background/70 p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:bg-background hover:shadow-card-hover dark:border-white/8 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]"
                 >
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-primary dark:bg-white/[0.06] dark:text-[#ffbb87]">
