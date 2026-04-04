@@ -1,34 +1,10 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { CalendarDays, ClipboardCheck, LayoutGrid, Megaphone, Sparkles } from "lucide-react";
+import { CalendarDays, LayoutGrid, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
-
-const FEATURE_CARDS = [
-  {
-    title: "Club directory",
-    subtitle: "For The Prep",
-    body: "Discover clubs, compare commitments, and find your people fast.",
-    icon: LayoutGrid,
-    accent: "from-[#ff8f52] via-[#ff4d7a] to-[#8a2eff]",
-  },
-  {
-    title: "Charter applications",
-    subtitle: "Built for St. Joe's Prep",
-    body: "Launch new clubs with a polished workflow that feels clear from start to finish.",
-    icon: ClipboardCheck,
-    accent: "from-[#7a101e] via-[#c22c44] to-[#f08b7f]",
-  },
-  {
-    title: "Announcements",
-    subtitle: "Signal, not noise",
-    body: "Share the updates that actually matter across St. Joseph's Preparatory School.",
-    icon: Megaphone,
-    accent: "from-[#1d274e] via-[#3556ac] to-[#8cb9ff]",
-  },
-];
 
 export function HeroPanel() {
   const reduceMotion = useReducedMotion();
@@ -76,8 +52,7 @@ export function HeroPanel() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] xl:items-start">
-          <div className="max-w-[720px]">
+        <div className="mt-10 max-w-[760px]">
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
@@ -104,70 +79,41 @@ export function HeroPanel() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.62, ease: EASE_OUT, delay: 0.24 } }}
-              className="mt-8 rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+              className="mt-8 max-w-[640px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
             >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">This week at The Prep</p>
-              <p className="mt-3 text-[30px] font-semibold tracking-[-0.06em] text-white sm:text-[36px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                18 clubs. 12 events. 1 place.
-              </p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Club momentum</p>
-                  <p className="mt-3 text-[28px] font-semibold tracking-[-0.05em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                    94%
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+                <div className="max-w-[360px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">A cleaner first impression</p>
+                  <p className="mt-3 text-[30px] font-semibold tracking-[-0.06em] text-white sm:text-[36px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                    One place for student life at The Prep.
                   </p>
-                  <p className="mt-2 text-[12px] leading-6 text-white/50">Applications, approvals, and leadership updates move in one clean flow.</p>
-                </div>
-                <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">School-wide view</p>
-                  <p className="mt-3 text-[15px] font-semibold tracking-[-0.03em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                    Clearer decisions for St. Joseph&apos;s Preparatory School
+                  <p className="mt-3 text-[13px] leading-7 text-white/52">
+                    No clutter, no bouncing between tools, and no guesswork about where things live.
                   </p>
-                  <p className="mt-2 text-[12px] leading-6 text-white/50">A cleaner system for student life, faculty workflows, and club leadership.</p>
                 </div>
-                <div className="rounded-[22px] border border-white/8 bg-white/[0.03] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Live rhythm</p>
-                  <div className="mt-3 space-y-2 text-[12px] text-white/64">
-                    <div className="flex items-center justify-between rounded-full bg-white/[0.04] px-3 py-2">
-                      <span>Meeting reminders</span>
-                      <span>Today</span>
+
+                <div className="grid min-w-0 gap-3 sm:w-[240px]">
+                  <div className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-white/80">
+                      <LayoutGrid className="h-4 w-4" />
                     </div>
-                    <div className="flex items-center justify-between rounded-full bg-white/[0.04] px-3 py-2">
-                      <span>Charter reviews</span>
-                      <span>2 pending</span>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Clubs</p>
+                      <p className="mt-1 text-[13px] text-white/74">Directory, leaders, applications</p>
                     </div>
-                    <div className="flex items-center justify-between rounded-full bg-white/[0.04] px-3 py-2">
-                      <span>NHS progress</span>
-                      <span>Updated</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-white/80">
+                      <CalendarDays className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Schedule</p>
+                      <p className="mt-1 text-[13px] text-white/74">Events, reminders, shared rhythm</p>
                     </div>
                   </div>
                 </div>
               </div>
             </motion.div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-            {FEATURE_CARDS.map((card, index) => (
-              <motion.div
-                key={card.title}
-                initial={{ opacity: 0, y: 24, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.65, ease: EASE_OUT, delay: 0.24 + index * 0.08 } }}
-                className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
-              >
-                <div className={`h-28 bg-gradient-to-br ${card.accent}`} />
-                <div className="space-y-3 p-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44">{card.subtitle}</p>
-                    <card.icon className="h-4 w-4 text-white/70" />
-                  </div>
-                  <h3 className="text-[18px] font-semibold tracking-[-0.04em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                    {card.title}
-                  </h3>
-                  <p className="text-[12.5px] leading-6 text-white/56">{card.body}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
         <div className="mt-8 flex flex-col gap-2 border-t border-white/8 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:flex-row sm:items-center sm:justify-between">
