@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { CalendarDays, LayoutGrid, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
@@ -37,33 +37,27 @@ export function HeroPanel() {
         transition={{ duration: 12, ease: "easeInOut", repeat: Infinity }}
       />
 
-      <div className="relative z-10 flex h-full flex-col">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-3">
-            <BrandLogo tone="inverse" />
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/64">
-              <Sparkles className="h-3 w-3" />
-              St. Joseph&apos;s Preparatory School
-            </div>
-          </div>
-
-          <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/54">
-            Built for The Prep
+      <div className="relative z-10 flex h-full flex-col justify-between">
+        <div className="space-y-3">
+          <BrandLogo tone="inverse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/64">
+            <Sparkles className="h-3 w-3" />
+            St. Joseph&apos;s Preparatory School
           </div>
         </div>
 
-        <div className="mt-10 max-w-[760px]">
+        <div className="my-12 max-w-[680px]">
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
               className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/44"
             >
-              Campus OS for The Prep
+              Built for The Prep
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.72, ease: EASE_OUT, delay: 0.08 } }}
-              className="text-balance text-[clamp(42px,7vw,94px)] font-semibold leading-[0.94] tracking-[-0.08em]"
+              className="text-balance text-[clamp(42px,7vw,88px)] font-semibold leading-[0.94] tracking-[-0.08em]"
               style={{ fontFamily: "Satoshi, var(--font-body)" }}
             >
               HawkLife
@@ -71,54 +65,33 @@ export function HeroPanel() {
             <motion.p
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.16 } }}
-              className="mt-5 max-w-[620px] text-balance text-[15px] leading-7 text-white/56 sm:text-[16px]"
+              className="mt-5 max-w-[520px] text-balance text-[15px] leading-7 text-white/56 sm:text-[16px]"
             >
-              The polished student platform for St. Joseph&apos;s Preparatory School. Clubs, announcements, NHS hours, charter applications, and schedules all move in one sharper rhythm.
+              A cleaner home for clubs, announcements, NHS hours, and schedules at St. Joe&apos;s Prep.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.62, ease: EASE_OUT, delay: 0.24 } }}
-              className="mt-8 max-w-[640px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+              className="mt-8 max-w-[520px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
             >
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-                <div className="max-w-[360px]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">A cleaner first impression</p>
-                  <p className="mt-3 text-[30px] font-semibold tracking-[-0.06em] text-white sm:text-[36px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-                    One place for student life at The Prep.
-                  </p>
-                  <p className="mt-3 text-[13px] leading-7 text-white/52">
-                    No clutter, no bouncing between tools, and no guesswork about where things live.
-                  </p>
-                </div>
-
-                <div className="grid min-w-0 gap-3 sm:w-[240px]">
-                  <div className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-white/80">
-                      <LayoutGrid className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Clubs</p>
-                      <p className="mt-1 text-[13px] text-white/74">Directory, leaders, applications</p>
-                    </div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">Why HawkLife</p>
+              <p className="mt-3 text-[28px] font-semibold tracking-[-0.06em] text-white sm:text-[34px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                One place for student life.
+              </p>
+              <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                {["Club directory", "Shared schedule", "NHS tracking"].map((item) => (
+                  <div key={item} className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-[12px] text-white/70">
+                    {item}
                   </div>
-                  <div className="flex items-center gap-3 rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-white/80">
-                      <CalendarDays className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">Schedule</p>
-                      <p className="mt-1 text-[13px] text-white/74">Events, reminders, shared rhythm</p>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </motion.div>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-white/8 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-white/8 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:flex-row sm:items-center sm:justify-between">
           <span>Philadelphia, PA</span>
-          <span>St. Joseph&apos;s Preparatory School student platform</span>
+          <span>HawkLife for St. Joseph&apos;s Preparatory School</span>
         </div>
       </div>
     </section>
