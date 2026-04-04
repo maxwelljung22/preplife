@@ -54,6 +54,45 @@ export async function createChangelogEntry(data: {
   }
 }
 
+export async function updateChangelogEntry(entryId: string, data: {
+  title: string;
+  content: string;
+  type: string;
+  isFeatured: boolean;
+}) {
+  try {
+    await checkAdmin();
+    const entry = await prisma.changelogEntry.update({
+      where: { id: entryId },
+      data: {
+        title: data.title,
+        content: data.content,
+        type: data.type as any,
+        isFeatured: data.isFeatured,
+      },
+    });
+    revalidatePath("/changelog");
+    revalidatePath("/admin");
+    revalidatePath("/dashboard");
+    return { entry };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+
+export async function deleteChangelogEntry(entryId: string) {
+  try {
+    await checkAdmin();
+    await prisma.changelogEntry.delete({ where: { id: entryId } });
+    revalidatePath("/changelog");
+    revalidatePath("/admin");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message };
+  }
+}
+
 export async function deleteClubAdmin(clubId: string) {
   try {
     await checkAdmin();

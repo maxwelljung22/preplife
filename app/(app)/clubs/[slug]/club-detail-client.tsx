@@ -8,10 +8,10 @@ import { format, isToday, isTomorrow } from "date-fns";
 import {
   ArrowLeft, Calendar, MapPin, Clock, Users,
   FileText, Link2, ExternalLink, ChevronRight,
-  CheckCircle, XCircle, AlertCircle,
+  CheckCircle, XCircle, AlertCircle, Pencil, Trash2,
 } from "lucide-react";
 import { joinClub, leaveClub } from "../actions";
-import { submitApplication, castVote, createPost, createClubEvent, createClubResource } from "./actions";
+import { submitApplication, castVote, createPost, createClubEvent, createClubResource, updatePost, deletePost } from "./actions";
 import { cn, formatRelativeTime, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -282,6 +282,9 @@ function AnnouncementsTab({ club, canManage, userId }: { club: any; canManage: b
   const [newPost, setNewPost] = useState({ title: "", content: "" });
   const [submitting, setSubmitting] = useState(false);
   const [posts, setPosts] = useState(club.posts);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editPost, setEditPost] = useState({ title: "", content: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
   const { toast } = useToast();
 
   const handlePost = async (e: React.FormEvent) => {
@@ -297,6 +300,37 @@ function AnnouncementsTab({ club, canManage, userId }: { club: any; canManage: b
       setNewPost({ title: "", content: "" });
       toast({ title: "Posted! ✓" });
     }
+  };
+
+  const handleStartEdit = (post: any) => {
+    setEditingPostId(post.id);
+    setEditPost({ title: post.title, content: post.content });
+  };
+
+  const handleSaveEdit = async (postId: string) => {
+    if (!editPost.title.trim() || !editPost.content.trim()) return;
+    setSavingEdit(true);
+    const result = await updatePost(postId, editPost.title, editPost.content);
+    setSavingEdit(false);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+      return;
+    }
+    if (result?.post) {
+      setPosts((current: any[]) => current.map((post) => (post.id === postId ? result.post : post)));
+      setEditingPostId(null);
+      toast({ title: "Announcement updated ✓" });
+    }
+  };
+
+  const handleDelete = async (postId: string) => {
+    const result = await deletePost(postId);
+    if (result?.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+      return;
+    }
+    setPosts((current: any[]) => current.filter((post) => post.id !== postId));
+    toast({ title: "Announcement deleted" });
   };
 
   return (
@@ -342,16 +376,69 @@ function AnnouncementsTab({ club, canManage, userId }: { club: any; canManage: b
             animate={{ opacity: 1, y: 0, transition: { delay: i * 0.04 } }}
             className="bg-card border border-border rounded-2xl p-5 shadow-card"
           >
-            <div className="flex items-center gap-2.5 mb-3">
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={post.author?.image} />
-                <AvatarFallback className="text-[9px] font-bold bg-muted">{initials(post.author?.name)}</AvatarFallback>
-              </Avatar>
-              <span className="text-[12.5px] font-semibold text-foreground/80">{post.author?.name}</span>
-              <span className="text-[11px] text-muted-foreground">{formatRelativeTime(post.createdAt)}</span>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={post.author?.image} />
+                  <AvatarFallback className="text-[9px] font-bold bg-muted">{initials(post.author?.name)}</AvatarFallback>
+                </Avatar>
+                <span className="text-[12.5px] font-semibold text-foreground/80">{post.author?.name}</span>
+                <span className="text-[11px] text-muted-foreground">{formatRelativeTime(post.createdAt)}</span>
+              </div>
+              {canManage && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleStartEdit(post)}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Edit announcement"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(post.id)}
+                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    aria-label="Delete announcement"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
-            <h3 className="text-[15px] font-bold text-foreground mb-1.5">{post.title}</h3>
-            <p className="text-[13.5px] text-foreground/75 leading-relaxed">{post.content}</p>
+            {editingPostId === post.id ? (
+              <div className="space-y-3">
+                <input
+                  value={editPost.title}
+                  onChange={(e) => setEditPost((current) => ({ ...current, title: e.target.value }))}
+                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card focus:ring-2 focus:ring-crimson/10"
+                />
+                <textarea
+                  value={editPost.content}
+                  onChange={(e) => setEditPost((current) => ({ ...current, content: e.target.value }))}
+                  rows={4}
+                  className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-[13.5px] outline-none focus:bg-card focus:ring-2 focus:ring-crimson/10"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setEditingPostId(null)}
+                    className="rounded-xl border border-border px-4 py-2 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleSaveEdit(post.id)}
+                    disabled={savingEdit}
+                    className="rounded-xl bg-crimson px-4 py-2 text-[12.5px] font-medium text-white transition-colors hover:bg-crimson/90 disabled:opacity-50"
+                  >
+                    {savingEdit ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="mb-1.5 text-[15px] font-bold text-foreground">{post.title}</h3>
+                <p className="text-[13.5px] leading-relaxed text-foreground/75">{post.content}</p>
+              </>
+            )}
           </motion.div>
         ))
       )}

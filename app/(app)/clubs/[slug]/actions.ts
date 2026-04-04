@@ -57,6 +57,58 @@ export async function createPost(clubId: string, title: string, content: string)
   }
 }
 
+export async function updatePost(postId: string, title: string, content: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Not authenticated" };
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, clubId: true },
+  });
+  if (!post) return { error: "Announcement not found" };
+
+  if (!(await canManageClub(post.clubId, session.user.id, session.user.role))) {
+    return { error: "You must be a club leader to edit announcements" };
+  }
+
+  try {
+    const updatedPost = await prisma.post.update({
+      where: { id: postId },
+      data: { title: title.trim(), content: content.trim() },
+      include: { author: { select: { name: true, image: true } } },
+    });
+    revalidatePath("/clubs");
+    return { post: updatedPost };
+  } catch (err) {
+    console.error("[updatePost]", err);
+    return { error: "Failed to update announcement" };
+  }
+}
+
+export async function deletePost(postId: string) {
+  const session = await auth();
+  if (!session?.user) return { error: "Not authenticated" };
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true, clubId: true },
+  });
+  if (!post) return { error: "Announcement not found" };
+
+  if (!(await canManageClub(post.clubId, session.user.id, session.user.role))) {
+    return { error: "You must be a club leader to delete announcements" };
+  }
+
+  try {
+    await prisma.post.delete({ where: { id: postId } });
+    revalidatePath("/clubs");
+    return { success: true };
+  } catch (err) {
+    console.error("[deletePost]", err);
+    return { error: "Failed to delete announcement" };
+  }
+}
+
 export async function createClubEvent(
   clubId: string,
   data: { title: string; description?: string; location?: string; startTime: string; endTime: string }
