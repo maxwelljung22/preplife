@@ -79,7 +79,7 @@ export function Topbar({ user }: TopbarProps) {
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card lg:hidden"
             aria-label="Open navigation"
           >
             <Menu className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function Topbar({ user }: TopbarProps) {
           <div className="hidden 2xl:block mr-2 opacity-90">
             <BrandLogo compact className="scale-[0.92]" />
           </div>
-          <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-80 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+          <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-200 w-80 shadow-[0_8px_24px_rgba(15,23,42,0.05)] hover:-translate-y-0.5 hover:shadow-card">
             <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
               placeholder="Search The Prep…"
@@ -107,7 +107,7 @@ export function Topbar({ user }: TopbarProps) {
 
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground hover:shadow-card"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card"
             title="Toggle theme"
             aria-label="Toggle theme"
           >
@@ -117,7 +117,7 @@ export function Topbar({ user }: TopbarProps) {
           <div ref={notifRef} className="relative">
             <button
               onClick={() => setNotifOpen((v) => !v)}
-              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground"
+              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card"
               aria-label="Open notifications"
               aria-expanded={notifOpen}
               aria-haspopup="dialog"
@@ -149,7 +149,7 @@ export function Topbar({ user }: TopbarProps) {
           </div>
 
           <Link href="/profile" aria-label="Open profile">
-            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-transparent transition-all hover:ring-crimson/30 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-transparent shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:ring-crimson/30">
               <AvatarImage src={user.image ?? undefined} />
               <AvatarFallback className="text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg, #B8952E, #A31212)" }}>
                 {initials(user.name)}

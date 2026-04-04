@@ -99,7 +99,7 @@ function SidebarNavContent({
               "relative flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
               isActive(item)
                 ? "shadow-sm"
-                : "hover:-translate-y-[1px]"
+                : "hover:-translate-y-[2px]"
             )}
             style={
               isActive(item)
@@ -147,7 +147,7 @@ function SidebarNavContent({
                   "flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
                   isActive(item)
                     ? "shadow-sm"
-                    : "hover:-translate-y-[1px]"
+                    : "hover:-translate-y-[2px]"
                 )}
                 style={
                   isActive(item)

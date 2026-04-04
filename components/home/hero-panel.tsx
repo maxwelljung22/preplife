@@ -48,7 +48,7 @@ export function HeroPanel() {
           <BrandLogo tone="inverse" />
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/64">
             <Sparkles className="h-3 w-3" />
-            Built for The Prep
+            St. Joseph&apos;s Preparatory School
           </div>
         </div>
 
@@ -58,7 +58,7 @@ export function HeroPanel() {
               animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
               className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/44"
             >
-              Built for The Prep
+              Student platform
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}

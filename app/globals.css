@@ -133,6 +133,14 @@
     transform: translateY(-2px);
   }
 
+  .interactive-float {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .interactive-float:hover {
+    transform: translateY(-2px);
+  }
+
   .topbar-glass {
     background: hsla(var(--shell-topbar));
     backdrop-filter: blur(20px) saturate(1.5);
