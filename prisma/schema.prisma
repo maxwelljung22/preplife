@@ -147,6 +147,8 @@ model User {
   grade          Int?
   graduationYear Int?
   bio            String?
+  hasSeenIntro   Boolean   @default(false)
+  introSeenAt    DateTime?
   lastSeenAt     DateTime  @default(now())
   notifLastSeen  DateTime  @default(now())
   createdAt      DateTime  @default(now())
