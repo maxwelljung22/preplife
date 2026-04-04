@@ -14,7 +14,7 @@ export function BrandLogo({ href = "/dashboard", compact = false, tone = "defaul
   const inverse = tone === "inverse";
 
   return (
-    <Link href={href} className={cn("inline-flex items-center gap-3", className)} aria-label="PrepLife home">
+    <Link href={href} className={cn("inline-flex items-center gap-3", className)} aria-label="HawkLife home">
       <div
         className={cn(
           "relative flex items-center justify-center rounded-[18px] border border-white/10 shadow-[0_18px_44px_rgba(139,26,26,0.24)]",
@@ -29,7 +29,7 @@ export function BrandLogo({ href = "/dashboard", compact = false, tone = "defaul
       </div>
       <div className="min-w-0">
         <div className="truncate text-[22px] font-medium tracking-[-0.06em]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
-          <span className={cn(inverse ? "text-white/95" : "text-neutral-950 dark:text-white/95")}>Prep</span>
+          <span className={cn(inverse ? "text-white/95" : "text-neutral-950 dark:text-white/95")}>Hawk</span>
           <span className="brand-gradient ml-0.5 bg-clip-text text-transparent">
             Life
           </span>

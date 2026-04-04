@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: { default: "PrepLife", template: "%s — PrepLife" },
+  title: { default: "HawkLife", template: "%s — HawkLife" },
   description: "St. Joseph's Preparatory School student activity platform",
 };
 

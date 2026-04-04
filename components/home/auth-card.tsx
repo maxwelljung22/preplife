@@ -29,7 +29,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
           style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.18), hsl(var(--accent) / 0.14), transparent)" }}
           aria-hidden="true"
         />
-        <div className="p-11">
+        <div className="p-6 sm:p-8 lg:p-11">
           <AnimatePresence mode="wait">
             {isSuccess ? (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-4 py-6">
@@ -49,8 +49,8 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                 <div className="mb-8">
                   <BrandLogo />
                 </div>
-                <h2 className="mb-1.5 text-[28px] font-semibold tracking-[-0.03em] text-foreground" style={{ fontFamily: "var(--font-display)" }}>Welcome back.</h2>
-                <p className="mb-8 max-w-[300px] text-sm leading-6 text-muted-foreground">Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
+                <h2 className="mb-1.5 text-[24px] font-semibold tracking-[-0.03em] text-foreground sm:text-[28px]" style={{ fontFamily: "var(--font-display)" }}>Welcome back to HawkLife.</h2>
+                <p className="mb-6 max-w-[300px] text-sm leading-6 text-muted-foreground sm:mb-8">Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
                 <div className="auth-divider mb-8 h-px" />
 
                 <AnimatePresence>
@@ -96,7 +96,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                     Restricted to <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</code> (faculty) and <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</code> (students).
                   </p>
                 </div>
-                <div className="mt-7 border-t border-border pt-5 text-center">
+                <div className="mt-6 border-t border-border pt-5 text-center sm:mt-7">
                   <p className="text-[12px] leading-[1.5] text-muted-foreground">By signing in, you agree to the platform&apos;s terms of use. Managed by St. Joseph&apos;s Preparatory School.</p>
                 </div>
               </motion.div>

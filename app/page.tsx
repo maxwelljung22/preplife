@@ -4,7 +4,7 @@ import { HomePage } from "@/components/home/home-page";
 import { getSession } from "@/lib/session";
 
 export const metadata = {
-  title: "PrepLife — St. Joseph's Preparatory School",
+  title: "HawkLife — St. Joseph's Preparatory School",
   description:
     "The official student platform for St. Joseph's Preparatory School. Manage clubs, track NHS hours, view events, and more.",
 };

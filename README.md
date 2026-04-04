@@ -1,4 +1,4 @@
-# PrepLife — St. Joseph's Preparatory School
+# HawkLife — St. Joseph's Preparatory School
 
 Student activity platform built with Next.js 14, Prisma, NextAuth v5, and Tailwind CSS.
 
@@ -24,7 +24,7 @@ npm run db:seed
 npm run dev
 ```
 
-Visit https://preplife-v3.vercel.app
+Visit https://hawklife.vercel.app
 
 ## Deployment
 
@@ -34,7 +34,7 @@ See the deployment guide in the conversation for step-by-step Vercel setup.
 - `DATABASE_URL` — Supabase pooled connection string (with `?pgbouncer=true`)
 - `DIRECT_URL` — Supabase direct connection string
 - `NEXTAUTH_SECRET` — run `openssl rand -base64 32`
-- `NEXTAUTH_URL` — `https://preplife-v3.vercel.app`
+- `NEXTAUTH_URL` — `https://hawklife.vercel.app`
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — from Google Cloud Console
 - `AIRTABLE_API_KEY` / `AIRTABLE_BASE_ID` / `AIRTABLE_TABLE` — NHS integration
 

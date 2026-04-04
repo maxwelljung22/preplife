@@ -12,22 +12,22 @@ function SignInContent() {
   const error       = params.get("error");
 
   return (
-    <div className="auth-page-bg min-h-screen flex items-center justify-center p-6">
+    <div className="auth-page-bg min-h-screen flex items-center justify-center px-4 py-6 sm:p-6">
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-        className="w-full max-w-[400px]"
+        className="w-full max-w-[420px]"
       >
-        <div className="text-center mb-8">
+        <div className="mb-6 text-center sm:mb-8">
           <div className="mb-5 flex justify-center">
             <BrandLogo />
           </div>
-          <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-foreground" style={{ fontFamily: "var(--font-display)" }}>Welcome to PrepLife</h1>
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-foreground sm:text-[28px]" style={{ fontFamily: "var(--font-display)" }}>Welcome to HawkLife</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">St. Joseph&apos;s Preparatory School</p>
         </div>
 
-        <div className="auth-card-surface rounded-[24px] p-7">
+        <div className="auth-card-surface rounded-[24px] p-5 sm:p-7">
           {error && (
             <div className="mb-5 rounded-xl border border-[hsl(var(--primary)/0.16)] bg-[hsl(var(--primary)/0.08)] px-3.5 py-3">
               <p className="text-[13px] leading-[1.5] text-[hsl(var(--primary))]">
@@ -42,7 +42,7 @@ function SignInContent() {
             whileHover={{ scale: 1.01, boxShadow: "0 18px 38px rgba(16,17,20,.18)" }}
             whileTap={{ scale: 0.98 }}
             onClick={() => signIn("google", { callbackUrl })}
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "14px 20px", background: "linear-gradient(135deg, #101114 0%, #1F2430 100%)", color: "#fff", border: "none", borderRadius: 18, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 14px 30px rgba(16,17,20,.16)" }}
+            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 54, padding: "14px 20px", background: "linear-gradient(135deg, #101114 0%, #1F2430 100%)", color: "#fff", border: "none", borderRadius: 18, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)", boxShadow: "0 14px 30px rgba(16,17,20,.16)" }}
           >
             <svg viewBox="0 0 24 24" style={{ height: 20, width: 20, flexShrink: 0 }}>
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -53,7 +53,7 @@ function SignInContent() {
             Continue with Google
           </motion.button>
         </div>
-        <p className="mt-5 text-center text-[11.5px] leading-[1.6] text-muted-foreground">
+        <p className="mt-5 px-2 text-center text-[11.5px] leading-[1.6] text-muted-foreground">
           Restricted to <span style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</span> and{" "}
           <span style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</span>
         </p>

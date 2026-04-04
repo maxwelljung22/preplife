@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        storageKey="preplife-theme"
+        storageKey="hawklife-theme"
         disableTransitionOnChange
       >
         {children}

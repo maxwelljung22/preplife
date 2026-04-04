@@ -65,7 +65,7 @@ export function Topbar({ user }: TopbarProps) {
   const title =
     PAGE_TITLES[pathname] ??
     Object.entries(PAGE_TITLES).find(([k]) => pathname.startsWith(k))?.[1] ??
-    "PrepLife";
+    "HawkLife";
 
   return (
     <>
@@ -86,7 +86,7 @@ export function Topbar({ user }: TopbarProps) {
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block">PrepLife Workspace</p>
+            <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block">HawkLife Workspace</p>
             <h1 className="truncate text-[18px] font-semibold tracking-[-0.04em] text-foreground sm:mt-1 sm:text-[20px]" style={{ fontFamily: "var(--font-display)" }}>
               {title}
             </h1>
