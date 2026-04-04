@@ -73,13 +73,7 @@ function SidebarNavContent({
 
       {/* Logo */}
       <div className="relative z-10 flex items-center justify-between border-b px-6 py-6" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
-        <div className="space-y-3">
-          <BrandLogo />
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[hsl(var(--shell-sidebar-muted))]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#f2b15d,#d13d49)]" />
-            St. Joseph&apos;s Preparatory School
-          </div>
-        </div>
+        <BrandLogo />
         {mobile ? (
           <button
             onClick={onNavigate}

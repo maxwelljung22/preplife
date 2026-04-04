@@ -43,27 +43,22 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
       {/* Welcome banner */}
       <motion.div
         {...fu(0)}
-        className="relative overflow-hidden rounded-[36px] border border-[rgba(255,255,255,0.08)] px-5 py-6 shadow-[0_30px_80px_rgba(12,24,36,0.24)] sm:px-7 sm:py-7 lg:px-9 lg:py-8"
-        style={{ background: "linear-gradient(145deg, #05070d 0%, #0a1020 34%, #0d1a33 68%, #101729 100%)" }}
+        className="relative overflow-hidden rounded-[36px] border border-border bg-[linear-gradient(145deg,rgba(255,250,248,0.96),rgba(254,246,241,0.98)_34%,rgba(246,239,252,0.98)_68%,rgba(242,236,248,0.98)_100%)] px-5 py-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)] sm:px-7 sm:py-7 lg:px-9 lg:py-8 dark:border-white/10 dark:bg-[linear-gradient(145deg,#05070d_0%,#0a1020_34%,#0d1a33_68%,#101729_100%)] dark:shadow-[0_30px_80px_rgba(12,24,36,0.24)]"
       >
         {/* Orbs */}
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(139,26,26,.22) 0%, transparent 70%)", filter: "blur(46px)", transform: "translate(30%, -30%)" }} />
-        <div className="absolute bottom-0 left-1/4 w-56 h-56 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(113,82,255,.18) 0%, transparent 70%)", filter: "blur(50px)" }} />
-        <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)", backgroundSize: "40px 40px", maskImage: "radial-gradient(circle at center, black, transparent 80%)" }} />
+        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(139,26,26,.12)_0%,transparent_70%)] blur-[46px] dark:bg-[radial-gradient(circle,rgba(139,26,26,.22)_0%,transparent_70%)]" style={{ transform: "translate(30%, -30%)" }} />
+        <div className="pointer-events-none absolute bottom-0 left-1/4 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(113,82,255,.08)_0%,transparent_70%)] blur-[50px] dark:bg-[radial-gradient(circle,rgba(113,82,255,.18)_0%,transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.05] dark:opacity-[0.08]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.08) 1px, transparent 1px)", backgroundSize: "40px 40px", maskImage: "radial-gradient(circle at center, black, transparent 80%)" }} />
 
         <div className="relative z-10 grid gap-6 xl:grid-cols-[1.3fr_0.7fr] xl:items-end">
           <div>
-            <p className="mb-3 inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[.16em] uppercase" style={{ color: "rgba(255,255,255,.56)", fontFamily: "var(--font-mono)" }}>
+            <p className="mb-3 inline-flex rounded-full border border-border bg-background/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[.16em] text-muted-foreground dark:border-white/10 dark:bg-white/5 dark:text-white/56" style={{ fontFamily: "var(--font-mono)" }}>
             {format(new Date(), "EEEE, MMMM d · yyyy")}
             </p>
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/52">
-              <Sparkles className="h-3.5 w-3.5 text-[#ffb37c]" />
-              St. Joseph&apos;s Preparatory School
-            </div>
-            <h1 className="max-w-[720px] text-white" style={{ fontFamily: "Satoshi, var(--font-body)", fontSize: "clamp(34px,5vw,66px)", fontWeight: 600, letterSpacing: "-.06em", lineHeight: 0.98 }}>
+            <h1 className="max-w-[720px] text-foreground dark:text-white" style={{ fontFamily: "Satoshi, var(--font-body)", fontSize: "clamp(34px,5vw,66px)", fontWeight: 600, letterSpacing: "-.06em", lineHeight: 0.98 }}>
               {greeting}, {firstName}. HawkLife is ready.
             </h1>
-            <p className="max-w-[560px]" style={{ fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,.46)", marginTop: 16 }}>
+            <p className="mt-4 max-w-[560px] text-[15px] leading-[1.7] text-foreground/72 dark:text-white/52">
               Your clubs, announcements, meetings, NHS hours, and applications all move in one cleaner system built for The Prep.
             </p>
 
@@ -73,9 +68,9 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
                 { num: upcomingEvents.length, label: "This Week" },
                 { num: unreadNotifs, label: "Unread" },
               ].map((s) => (
-                <div key={s.label} className="rounded-[24px] border border-white/8 bg-white/[0.04] px-4 py-4 backdrop-blur-md">
-                  <p className="text-white" style={{ fontFamily: "Satoshi, var(--font-body)", fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{s.num}</p>
-                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".09em", color: "rgba(255,255,255,.34)", marginTop: 6 }}>{s.label}</p>
+                <div key={s.label} className="rounded-[24px] border border-border bg-background/70 px-4 py-4 backdrop-blur-md dark:border-white/8 dark:bg-white/[0.04]">
+                  <p className="text-foreground dark:text-white" style={{ fontFamily: "Satoshi, var(--font-body)", fontSize: 28, fontWeight: 600, lineHeight: 1 }}>{s.num}</p>
+                  <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[.09em] text-muted-foreground dark:text-white/34">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -86,18 +81,18 @@ export function DashboardClient({ user, membershipCount, upcomingEvents, recentP
               <Link key={action.href} href={action.href}>
                 <motion.div
                   {...fu(0.08 + index * 0.05)}
-                  className="group rounded-[28px] border border-white/8 bg-white/[0.04] p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:bg-white/[0.06]"
+                  className="group rounded-[28px] border border-border bg-background/70 p-4 backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:bg-background dark:border-white/8 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]"
                 >
                   <div className="mb-4 flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.06] text-[#ffbb87]">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-muted text-primary dark:bg-white/[0.06] dark:text-[#ffbb87]">
                       <action.icon className="h-5 w-5" />
                     </div>
-                    <ArrowUpRight className="h-4 w-4 text-white/34 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-white/70" />
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground dark:text-white/34 dark:group-hover:text-white/70" />
                   </div>
-                  <p className="text-[16px] font-semibold tracking-[-0.03em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                  <p className="text-[16px] font-semibold tracking-[-0.03em] text-foreground dark:text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
                     {action.label}
                   </p>
-                  <p className="mt-1 text-[12.5px] leading-6 text-white/48">{action.note}</p>
+                  <p className="mt-1 text-[12.5px] leading-6 text-foreground/68 dark:text-white/48">{action.note}</p>
                 </motion.div>
               </Link>
             ))}

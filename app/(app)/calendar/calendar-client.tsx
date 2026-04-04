@@ -86,6 +86,31 @@ export function CalendarClient({ events }: { events: CalEvent[] }) {
     })
     .slice(0, 8);
 
+  if (validEvents.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <p className="mb-2 text-[10.5px] font-bold uppercase tracking-[.10em] text-crimson">Schedule</p>
+          <h1 className="font-display text-[34px] font-semibold tracking-tight text-foreground">
+            Activity <span className="italic">Calendar</span>
+          </h1>
+        </div>
+
+        <div className="surface-card rounded-[32px] p-8 text-center sm:p-12">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-muted text-2xl">
+            📅
+          </div>
+          <h2 className="text-[24px] font-semibold text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+            No calendar events yet
+          </h2>
+          <p className="mx-auto mt-3 max-w-[520px] text-[14px] leading-7 text-muted-foreground">
+            Once clubs or school admins add events for St. Joseph&apos;s Preparatory School, they&apos;ll appear here. Right now the calendar is clear.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
