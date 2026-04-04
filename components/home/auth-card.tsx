@@ -50,7 +50,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                   <BrandLogo />
                 </div>
                 <h2 className="mb-1.5 text-[24px] font-semibold tracking-[-0.03em] text-foreground sm:text-[28px]" style={{ fontFamily: "var(--font-display)" }}>Welcome back to HawkLife.</h2>
-                <p className="mb-6 max-w-[300px] text-sm leading-6 text-muted-foreground sm:mb-8">Sign in with your St. Joe&apos;s Google account to pick up where campus life left off.</p>
+                <p className="mb-6 max-w-[300px] text-sm leading-6 text-muted-foreground sm:mb-8">Sign in with your St. Joseph&apos;s Preparatory School Google account to pick up where life at The Prep left off.</p>
                 <div className="auth-divider mb-8 h-px" />
 
                 <AnimatePresence>

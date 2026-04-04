@@ -37,7 +37,7 @@ function SignInContent() {
               </p>
             </div>
           )}
-          <p className="mb-5 text-[13.5px] leading-[1.6] text-muted-foreground">Sign in with your St. Joe&apos;s school Google account.</p>
+          <p className="mb-5 text-[13.5px] leading-[1.6] text-muted-foreground">Sign in with your St. Joseph&apos;s Preparatory School Google account to continue into life at St. Joe&apos;s Prep.</p>
           <motion.button
             whileHover={{ scale: 1.01, boxShadow: "0 18px 38px rgba(16,17,20,.18)" }}
             whileTap={{ scale: 0.98 }}
