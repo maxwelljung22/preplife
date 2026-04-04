@@ -1,6 +1,7 @@
 // app/(app)/admin/page.tsx
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAllNhsRecords } from "@/lib/airtable";
 import { AdminClient } from "./admin-client";
@@ -30,14 +31,35 @@ export default async function AdminPage() {
     : [];
 
   const applicationWhere = isAdmin ? {} : { clubId: { in: advisorClubIds } };
+  const clubSelect = Prisma.validator<Prisma.ClubSelect>()({
+    id: true,
+    slug: true,
+    name: true,
+    emoji: true,
+    tagline: true,
+    description: true,
+    category: true,
+    commitment: true,
+    tags: true,
+    isActive: true,
+    requiresApp: true,
+    meetingRoom: true,
+    meetingDay: true,
+    meetingTime: true,
+    gradientFrom: true,
+    gradientTo: true,
+    isFlagged: true,
+    flagReason: true,
+    createdAt: true,
+    updatedAt: true,
+    _count: { select: { memberships: { where: { status: "ACTIVE" } }, posts: true, events: true } },
+  });
 
   try {
     const [clubs, users, applications, changelog, nhsRecords, totalEvents, attendanceCount, participatingStudents] = await Promise.all([
       prisma.club.findMany({
         orderBy: { name: "asc" },
-        include: {
-          _count: { select: { memberships: { where: { status: "ACTIVE" } }, posts: true, events: true } },
-        },
+        select: clubSelect,
       }),
       prisma.user.findMany({
         orderBy: { createdAt: "desc" },

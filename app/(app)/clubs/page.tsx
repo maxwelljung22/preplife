@@ -1,5 +1,6 @@
 // app/(app)/clubs/page.tsx
 import { Suspense } from "react";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ClubsClient } from "./clubs-client";
 import { ClubsSkeleton } from "./clubs-skeleton";
@@ -28,13 +29,30 @@ async function getClubs(userId: string, params: SearchParams) {
     ];
   }
 
+  const clubSelect = Prisma.validator<Prisma.ClubSelect>()({
+    id: true,
+    slug: true,
+    name: true,
+    emoji: true,
+    tagline: true,
+    description: true,
+    category: true,
+    commitment: true,
+    tags: true,
+    gradientFrom: true,
+    gradientTo: true,
+    meetingDay: true,
+    meetingTime: true,
+    meetingRoom: true,
+    requiresApp: true,
+    _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+  });
+
   const [clubs, memberships] = await Promise.all([
     prisma.club.findMany({
       where,
       orderBy: [{ memberships: { _count: "desc" } }, { name: "asc" }],
-      include: {
-        _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
-      },
+      select: clubSelect,
     }),
     prisma.membership.findMany({
       where: { userId, status: "ACTIVE" },
