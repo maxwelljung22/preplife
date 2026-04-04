@@ -3,16 +3,55 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { FirstRunIntroGate } from "@/components/intro/first-run-intro-gate";
 import { AppShell } from "@/components/layout/app-shell";
+import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
   if (!session?.user) redirect("/auth/signin");
-  const [introState, notifications, unreadNotifications] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { hasSeenIntro: true },
-    }),
-    prisma.notification.findMany({
+  let introState: { hasSeenIntro: boolean } | null = null;
+  let notifications: Array<{
+    id: string;
+    title: string;
+    body: string;
+    type: string;
+    refId: string | null;
+    refType: string | null;
+    isRead: boolean;
+    createdAt: Date;
+  }> = [];
+  let unreadNotifications = 0;
+
+  try {
+    [introState, notifications, unreadNotifications] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { hasSeenIntro: true },
+      }),
+      prisma.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          type: true,
+          refId: true,
+          refType: true,
+          isRead: true,
+          createdAt: true,
+        },
+      }),
+      prisma.notification.count({
+        where: { userId: session.user.id, isRead: false },
+      }),
+    ]);
+  } catch (error) {
+    if (!isPrismaMissingColumnError(error)) {
+      throw error;
+    }
+
+    notifications = await prisma.notification.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       take: 8,
@@ -26,11 +65,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         isRead: true,
         createdAt: true,
       },
-    }),
-    prisma.notification.count({
+    });
+    unreadNotifications = await prisma.notification.count({
       where: { userId: session.user.id, isRead: false },
-    }),
-  ]);
+    });
+    introState = { hasSeenIntro: true };
+  }
 
   return (
     <FirstRunIntroGate userId={session.user.id} shouldShowInitially={!introState?.hasSeenIntro}>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ClubDetailClient } from "./club-detail-client";
 import { getSession } from "@/lib/session";
 import { canManageClubMembershipRole } from "@/lib/roles";
+import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -11,46 +12,139 @@ interface Props {
 }
 
 async function getClubData(slug: string, userId: string) {
-  const club = await prisma.club.findUnique({
-      where: { slug, isActive: true },
+  const includeShared = {
+    _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+    memberships: {
+      where: { status: "ACTIVE" },
+      include: { user: { select: { id: true, name: true, email: true, image: true, grade: true } } },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+    },
+    posts: {
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: { author: { select: { name: true, image: true } } },
+    },
+    events: {
+      where: { startTime: { gte: new Date() } },
+      orderBy: { startTime: "asc" },
+      take: 10,
+    },
+    applications: userId
+      ? {
+          where: { applicantId: userId },
+          select: { id: true, status: true, createdAt: true },
+        }
+      : undefined,
+    appForm: true,
+    polls: {
+      where: { isActive: true },
       include: {
-        _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
-        memberships: {
-          where: { status: "ACTIVE" },
-          include: { user: { select: { id: true, name: true, email: true, image: true, grade: true } } },
-          orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
-        },
-        posts: {
-          orderBy: { createdAt: "desc" },
-          take: 10,
-          include: { author: { select: { name: true, image: true } } },
-        },
-        events: {
-          where: { startTime: { gte: new Date() } },
-          orderBy: { startTime: "asc" },
-          take: 10,
-        },
+        options: { include: { _count: { select: { votes: true } } } },
+        _count: { select: { votes: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    },
+  } as const;
+
+  let club;
+
+  try {
+    club = await prisma.club.findUnique({
+      where: { slug, isActive: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        emoji: true,
+        tagline: true,
+        description: true,
+        category: true,
+        commitment: true,
+        tags: true,
+        requiresApp: true,
+        meetingDay: true,
+        meetingTime: true,
+        meetingRoom: true,
+        gradientFrom: true,
+        gradientTo: true,
+        workspaceTitle: true,
+        workspaceDescription: true,
+        ...includeShared,
         resources: {
           orderBy: { createdAt: "desc" },
-        },
-        applications: userId
-          ? {
-              where: { applicantId: userId },
-              select: { id: true, status: true, createdAt: true },
-            }
-          : undefined,
-        appForm: true,
-        polls: {
-          where: { isActive: true },
-          include: {
-            options: { include: { _count: { select: { votes: true } } } },
-            _count: { select: { votes: true } },
+          select: {
+            id: true,
+            clubId: true,
+            uploaderId: true,
+            name: true,
+            type: true,
+            category: true,
+            url: true,
+            description: true,
+            dueAt: true,
+            membersOnly: true,
+            size: true,
+            createdAt: true,
           },
-          orderBy: { createdAt: "desc" },
-          take: 5,
         },
       },
     });
+  } catch (error) {
+    if (!isPrismaMissingColumnError(error)) {
+      throw error;
+    }
+
+    const fallbackClub = await prisma.club.findUnique({
+      where: { slug, isActive: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        emoji: true,
+        tagline: true,
+        description: true,
+        category: true,
+        commitment: true,
+        tags: true,
+        requiresApp: true,
+        meetingDay: true,
+        meetingTime: true,
+        meetingRoom: true,
+        gradientFrom: true,
+        gradientTo: true,
+        ...includeShared,
+        resources: {
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            clubId: true,
+            uploaderId: true,
+            name: true,
+            type: true,
+            url: true,
+            description: true,
+            size: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    club = fallbackClub
+      ? {
+          ...fallbackClub,
+          workspaceTitle: null,
+          workspaceDescription: null,
+          resources: fallbackClub.resources.map((resource) => ({
+            ...resource,
+            category: "RESOURCE" as const,
+            dueAt: null,
+            membersOnly: true,
+          })),
+        }
+      : null;
+  }
 
   if (!club) return null;
 

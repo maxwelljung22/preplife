@@ -219,9 +219,15 @@ export function Sidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  const handleNavigate = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      onClose();
+    }
+  };
+
   return (
     <>
-      <div className={cn("fixed inset-0 z-[55] bg-black/35 transition-opacity duration-300", open ? "opacity-100 lg:block" : "pointer-events-none opacity-0")} onClick={onClose} />
+      <div className={cn("fixed inset-0 z-[55] bg-black/35 transition-opacity duration-300 lg:hidden", open ? "opacity-100" : "pointer-events-none opacity-0")} onClick={onClose} />
       <aside
         className={cn(
           "sidebar-bg fixed inset-y-0 left-0 z-[60] flex w-72 flex-col border-r transition-transform duration-300 ease-out",
@@ -229,7 +235,7 @@ export function Sidebar({
         )}
         style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}
       >
-        <SidebarNavContent user={user} onNavigate={onClose} />
+        <SidebarNavContent user={user} onNavigate={handleNavigate} mobile />
       </aside>
     </>
   );
