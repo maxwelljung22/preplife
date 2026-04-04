@@ -16,13 +16,13 @@ export function BrandLogo({ href = "/dashboard", compact = false, tone = "defaul
 
   return (
     <Link href={href} className={cn("inline-flex items-center gap-3", className)} aria-label="HawkLife home">
-      <div className={cn("relative shrink-0 overflow-visible", compact ? "h-11 w-12" : "h-12 w-14")}>
+      <div className={cn("relative shrink-0 overflow-visible", compact ? "h-12 w-[3.75rem]" : "h-14 w-[4.75rem]")}>
         <Image
           src="/hawklife-hawk.png"
           alt="HawkLife hawk logo"
           fill
-          sizes={compact ? "48px" : "56px"}
-          className="object-contain drop-shadow-[0_12px_26px_rgba(139,26,26,0.24)]"
+          sizes={compact ? "60px" : "76px"}
+          className="object-contain drop-shadow-[0_14px_30px_rgba(139,26,26,0.24)]"
           priority
         />
       </div>
