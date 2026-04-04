@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { applySecurityHeaders } from "@/lib/security";
+import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 
 export async function POST() {
   const session = await auth();
@@ -10,13 +11,19 @@ export async function POST() {
     return applySecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: {
-      hasSeenIntro: true,
-      introSeenAt: new Date(),
-    },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        hasSeenIntro: true,
+        introSeenAt: new Date(),
+      },
+    });
+  } catch (error) {
+    if (!isPrismaMissingColumnError(error)) {
+      throw error;
+    }
+  }
 
   return applySecurityHeaders(NextResponse.json({ success: true }));
 }

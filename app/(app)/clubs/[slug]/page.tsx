@@ -1,5 +1,6 @@
 // app/(app)/clubs/[slug]/page.tsx
 import { notFound } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ClubDetailClient } from "./club-detail-client";
 import { getSession } from "@/lib/session";
@@ -12,7 +13,7 @@ interface Props {
 }
 
 async function getClubData(slug: string, userId: string) {
-  const includeShared = {
+  const includeShared = Prisma.validator<Prisma.ClubSelect>()({
     _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
     memberships: {
       where: { status: "ACTIVE" },
@@ -45,7 +46,7 @@ async function getClubData(slug: string, userId: string) {
       orderBy: { createdAt: "desc" },
       take: 5,
     },
-  } as const;
+  });
 
   let club;
 
