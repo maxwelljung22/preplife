@@ -18,7 +18,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
 
   return (
     <motion.div
-      className="relative w-full max-w-[380px]"
+      className="relative w-full max-w-[390px]"
       initial={{ opacity: 0, scale: shouldReduce ? 1 : 0.94, y: shouldReduce ? 0 : 16 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.52, ease: [0.34, 1.56, 0.64, 1], delay: 0.38 }}
@@ -50,7 +50,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                   <BrandLogo />
                 </div>
                 <h2 className="mb-1.5 text-[24px] font-semibold tracking-[-0.03em] text-foreground sm:text-[28px]" style={{ fontFamily: "var(--font-display)" }}>Welcome back to HawkLife.</h2>
-                <p className="mb-6 max-w-[300px] text-sm leading-6 text-muted-foreground sm:mb-8">Sign in with your St. Joseph&apos;s Preparatory School Google account to pick up where life at The Prep left off.</p>
+                <p className="mb-6 max-w-[312px] text-sm leading-6 text-muted-foreground sm:mb-8">Sign in with your St. Joseph&apos;s Preparatory School Google account to pick up where life at The Prep left off.</p>
                 <div className="auth-divider mb-8 h-px" />
 
                 <AnimatePresence>
@@ -93,7 +93,7 @@ export function AuthCard({ state, errorMessage, onSignIn }: AuthCardProps) {
                 <div className="auth-note mt-5 flex items-start gap-2.5 rounded-[14px] px-3.5 py-3">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#A89D8E" strokeWidth="1.4" strokeLinecap="round" className="flex-shrink-0 mt-0.5"><circle cx="7" cy="7" r="5.5" /><path d="M7 6v3M7 4.5v.5" /></svg>
                   <p className="text-[12px] leading-[1.55] text-muted-foreground">
-                    Restricted to <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</code> (faculty) and <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</code> (students).
+                    Restricted to <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprep.org</code> for faculty and <code className="rounded bg-[hsl(var(--primary)/0.08)] px-1 py-0.5 text-[11px] text-[hsl(var(--primary))]" style={{ fontFamily: "var(--font-mono)" }}>@sjprephawks.org</code> for students at St. Joe&apos;s Prep.
                   </p>
                 </div>
                 <div className="mt-6 border-t border-border pt-5 text-center sm:mt-7">

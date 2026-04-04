@@ -1,112 +1,207 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { CalendarDays, ClipboardCheck, LayoutGrid, Megaphone, ShieldCheck, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/layout/brand-logo";
 
-const PILLS = [
-  { label: "Club Directory",  dot: "#D43B47" },
-  { label: "NHS Hours",       dot: "#E9B35B" },
-  { label: "Calendar",        dot: "#7CA5FF" },
-  { label: "Applications",    dot: "#50B889" },
-  { label: "Announcements",   dot: "#F58F7E" },
-] as const;
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
-const EASE_OUT = [0.4, 0, 0.2, 1] as const;
+const PREVIEW_CARDS = [
+  {
+    title: "Club directory",
+    eyebrow: "For The Prep",
+    body: "Discover clubs, compare commitments, and find your people fast.",
+    icon: LayoutGrid,
+    accent: "from-[#ff8f52] via-[#ff4d7a] to-[#8a2eff]",
+    className: "lg:absolute lg:left-0 lg:top-24 lg:w-[280px] lg:-rotate-[7deg]",
+  },
+  {
+    title: "Charter applications",
+    eyebrow: "Built for St. Joe's Prep",
+    body: "Launch new clubs with a polished, multi-step charter workflow.",
+    icon: ClipboardCheck,
+    accent: "from-[#7a101e] via-[#c22c44] to-[#f08b7f]",
+    className: "lg:absolute lg:left-[14%] lg:bottom-0 lg:w-[300px] lg:rotate-[3deg]",
+  },
+  {
+    title: "Live calendar",
+    eyebrow: "One shared campus rhythm",
+    body: "Meetings, events, and deadlines in one elegant planning surface.",
+    icon: CalendarDays,
+    accent: "from-[#182c58] via-[#3556ac] to-[#8cb9ff]",
+    className: "lg:absolute lg:right-[13%] lg:top-20 lg:w-[292px] lg:rotate-[5deg]",
+  },
+  {
+    title: "Announcements",
+    eyebrow: "Signal, not noise",
+    body: "Push the updates that matter across St. Joseph's Preparatory School.",
+    icon: Megaphone,
+    accent: "from-[#322010] via-[#8e5d1f] to-[#f3c978]",
+    className: "lg:absolute lg:right-0 lg:bottom-6 lg:w-[280px] lg:-rotate-[4deg]",
+  },
+];
 
 export function HeroPanel() {
-  const shouldReduce = useReducedMotion();
+  const reduceMotion = useReducedMotion();
 
   return (
-    <section
-      className="relative flex-[0_0_55%] flex flex-col justify-center overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #09111B 0%, #0E1C2B 55%, #13263A 100%)", padding: "64px 72px" }}
-      aria-label="Hero"
-    >
-      {/* Ambient orbs */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{ width: 420, height: 420, top: -100, left: -80, borderRadius: "50%", background: "radial-gradient(circle, rgba(192,44,56,.36) 0%, transparent 70%)", filter: "blur(80px)" }}
-        animate={shouldReduce ? {} : { x: [0,18,-12,0], y: [0,-22,14,0], scale: [1,1.04,0.97,1] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-        aria-hidden="true"
-      />
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{ width: 360, height: 360, bottom: -80, right: -60, borderRadius: "50%", background: "radial-gradient(circle, rgba(28,51,70,.9) 0%, rgba(255,118,118,.16) 60%, transparent 100%)", filter: "blur(80px)" }}
-        animate={shouldReduce ? {} : { x: [0,-20,14,0], y: [0,16,-18,0], scale: [1,1.06,0.95,1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        aria-hidden="true"
-      />
-
-      {/* Grid overlay */}
+    <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#05070d] px-5 py-6 text-white shadow-[0_40px_120px_rgba(0,0,0,0.42)] sm:px-7 sm:py-8 lg:min-h-[820px] lg:px-10 lg:py-10">
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.024) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.024) 1px, transparent 1px)", backgroundSize: "48px 48px", maskImage: "linear-gradient(135deg, transparent 30%, rgba(0,0,0,.5) 70%, transparent 100%)" }}
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 16%, rgba(92,102,255,0.12), transparent 20%), radial-gradient(circle at 20% 24%, rgba(196,46,63,0.18), transparent 26%), radial-gradient(circle at 80% 74%, rgba(212,143,62,0.12), transparent 24%), linear-gradient(180deg, #06080e 0%, #090d16 48%, #06080d 100%)",
+        }}
         aria-hidden="true"
       />
-      <div className="absolute right-0 top-0 bottom-0 w-px" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,255,255,.07) 25%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.07) 75%, transparent)" }} aria-hidden="true" />
+      <div
+        className="absolute inset-0 opacity-[0.08]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.08) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+          maskImage: "radial-gradient(circle at center, black, transparent 82%)",
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Content */}
-      <div className="relative z-10 max-w-[520px]">
-        {/* Logo */}
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.52, ease: EASE_OUT, delay: 0.1 } }} className="mb-14">
-          <BrandLogo tone="inverse" />
-        </motion.div>
+      <motion.div
+        aria-hidden="true"
+        className="absolute left-1/2 top-16 h-[280px] w-[280px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(120,72,255,.28),transparent_68%)] blur-3xl"
+        animate={reduceMotion ? {} : { scale: [1, 1.06, 0.98, 1], opacity: [0.85, 1, 0.92, 0.85] }}
+        transition={{ duration: 12, ease: "easeInOut", repeat: Infinity }}
+      />
 
-        {/* Eyebrow */}
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.52, ease: EASE_OUT, delay: 0.22 } }} className="flex items-center gap-2.5 mb-5">
-          <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.55 } }} style={{ width: 28, height: 1, background: "linear-gradient(to right, #B89240, transparent)", transformOrigin: "left" }} />
-          <span style={{ color: "#F0B35D", fontFamily: "var(--font-mono)", fontSize: 10.5, fontWeight: 500, letterSpacing: ".12em", textTransform: "uppercase" }}>St. Joseph&apos;s Preparatory · Built for campus life</span>
-        </motion.div>
-
-        {/* Headline */}
-        <h1 style={{ lineHeight: 1.06, marginBottom: 24 }}>
-          <div style={{ overflow: "hidden" }}>
-            <motion.div initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.35 } }}>
-              <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "clamp(38px, 4.2vw, 58px)", fontWeight: 400, letterSpacing: "-.025em", color: "#F7F3EC" }}>A student platform</span>
-            </motion.div>
+      <div className="relative z-10 flex h-full flex-col">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-4">
+            <BrandLogo tone="inverse" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/65">
+              <Sparkles className="h-3 w-3" />
+              St. Joseph&apos;s Preparatory School
+            </div>
           </div>
-          <div style={{ overflow: "hidden" }}>
-            <motion.div initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.47 } }}>
-              <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "clamp(38px, 4.2vw, 58px)", fontWeight: 400, letterSpacing: "-.025em", color: "#F7F3EC" }}>
-                with actual
-                <em style={{ fontStyle: "italic", color: "rgba(255,178,170,.8)", marginLeft: 8 }}>school spirit.</em>
-              </span>
-            </motion.div>
+
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] text-white/60">
+            <ShieldCheck className="h-3.5 w-3.5 text-[#ffb9a7]" />
+            Built for St. Joe&apos;s Prep
           </div>
-        </h1>
+        </div>
 
-        {/* Description */}
-        <motion.p
-          initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.52, ease: EASE_OUT, delay: 0.62 } }}
-          style={{ fontSize: 15.5, lineHeight: 1.68, color: "rgba(255,255,255,.4)", marginBottom: 44, maxWidth: 400 }}
-        >
-          Clubs, NHS hours, announcements, events, applications, and charter workflows in one clean campus OS built specifically for the St. Joseph&apos;s Preparatory School community.
-        </motion.p>
-
-        {/* Pills */}
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.52, ease: EASE_OUT, delay: 0.78 } }} className="flex flex-wrap gap-2">
-          {PILLS.map((pill) => (
-            <motion.div
-              key={pill.label}
-              className="inline-flex items-center gap-1.5 cursor-default select-none"
-              style={{ padding: "6px 13px", borderRadius: 999, background: "rgba(255,255,255,.055)", border: "1px solid rgba(255,255,255,.09)", color: "rgba(255,255,255,.52)", fontSize: 12, fontWeight: 500, backdropFilter: "blur(8px)" }}
-              whileHover={{ background: "rgba(255,255,255,.09)", borderColor: "rgba(255,255,255,.16)", color: "rgba(255,255,255,.8)", y: -1 }}
-              transition={{ duration: 0.18 }}
+        <div className="relative mt-10 flex-1">
+          <div className="mx-auto max-w-[760px] text-center">
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
+              className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/44"
             >
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: pill.dot, flexShrink: 0, display: "inline-block" }} />
-              {pill.label}
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
+              Campus OS for The Prep
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.72, ease: EASE_OUT, delay: 0.08 } }}
+              className="text-balance text-[clamp(42px,8vw,108px)] font-semibold leading-[0.94] tracking-[-0.08em]"
+              style={{ fontFamily: "Satoshi, var(--font-body)" }}
+            >
+              HawkLife
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.16 } }}
+              className="mx-auto mt-5 max-w-[630px] text-balance text-[15px] leading-7 text-white/56 sm:text-[16px]"
+            >
+              The polished student platform for St. Joseph&apos;s Preparatory School. Clubs, announcements, NHS hours, charter applications, and schedules all move with one sharper rhythm.
+            </motion.p>
+          </div>
 
-      {/* Footer */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 1.1, duration: 0.5 } }} className="absolute bottom-7 flex items-center" style={{ left: 72, right: 72 }}>
-        <span style={{ fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: "rgba(255,255,255,.18)", fontFamily: "var(--font-mono)" }}>Philadelphia, PA</span>
-        <div className="flex-1 h-px mx-5" style={{ background: "rgba(255,255,255,.06)" }} />
-        <span style={{ fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: "rgba(255,255,255,.18)", fontFamily: "var(--font-mono)" }}>SJP Student Platform</span>
-      </motion.div>
+          <div className="mt-10 grid gap-4 lg:mt-16 lg:block lg:min-h-[470px]">
+            {PREVIEW_CARDS.map((card, index) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 26, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.65, ease: EASE_OUT, delay: 0.18 + index * 0.08 } }}
+                whileHover={reduceMotion ? undefined : { y: -6, scale: 1.01 }}
+                className={`overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_28px_80px_rgba(0,0,0,0.28)] backdrop-blur-xl ${card.className}`}
+              >
+                <div className={`h-32 bg-gradient-to-br ${card.accent}`} />
+                <div className="space-y-3 p-5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44">{card.eyebrow}</p>
+                    <card.icon className="h-4 w-4 text-white/72" />
+                  </div>
+                  <h3 className="text-[18px] font-semibold tracking-[-0.04em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                    {card.title}
+                  </h3>
+                  <p className="text-[12.5px] leading-6 text-white/56">{card.body}</p>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-2 rounded-full bg-white/8">
+                      <div className="h-full w-[72%] rounded-full bg-white/70" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/46">Reviewed quickly</div>
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] text-white/46">Cleaner decisions</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.7, ease: EASE_OUT, delay: 0.45 } }}
+              className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:absolute lg:left-1/2 lg:top-36 lg:w-[360px] lg:-translate-x-1/2"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">Live snapshot</p>
+                  <p className="mt-1 text-[18px] font-semibold tracking-[-0.04em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                    Student life, finally organized
+                  </p>
+                </div>
+                <div className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ffb8aa]">
+                  HawkLife
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="rounded-[26px] border border-white/8 bg-[linear-gradient(135deg,rgba(255,130,98,0.18),rgba(125,78,255,0.28))] p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">This week at The Prep</p>
+                  <p className="mt-3 text-[28px] font-semibold tracking-[-0.06em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                    18 clubs. 12 events. 1 place.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-black/20 px-3 py-1 text-[11px] text-white/76">Charter reviews</span>
+                    <span className="rounded-full bg-black/20 px-3 py-1 text-[11px] text-white/76">Meeting reminders</span>
+                    <span className="rounded-full bg-black/20 px-3 py-1 text-[11px] text-white/76">NHS progress</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Club momentum</p>
+                    <p className="mt-3 text-[30px] font-semibold tracking-[-0.06em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                      94%
+                    </p>
+                    <p className="mt-2 text-[12px] leading-6 text-white/50">Applications, approvals, and leadership updates move in one clean flow.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Why it lands</p>
+                    <p className="mt-3 text-[15px] font-semibold tracking-[-0.03em] text-white" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+                      Personalized for St. Joseph&apos;s Preparatory School
+                    </p>
+                    <p className="mt-2 text-[12px] leading-6 text-white/50">Crimson-forward, academic, and built to feel like a product students actually enjoy using.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-2 border-t border-white/8 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:flex-row sm:items-center sm:justify-between">
+          <span>Philadelphia, PA</span>
+          <span>St. Joseph&apos;s Preparatory School student platform</span>
+        </div>
+      </div>
     </section>
   );
 }
