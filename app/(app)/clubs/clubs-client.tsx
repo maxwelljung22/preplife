@@ -98,7 +98,7 @@ export function ClubsClient({ clubs: initialClubs, userId, role }: Props) {
             <span className="italic">Directory</span>
           </h1>
           <p className="text-[14px] text-muted-foreground mt-2">
-            {initialClubs.length} organizations — find your community at Prep.
+            {initialClubs.length} organizations — find your community at St. Joseph&apos;s Preparatory School.
           </p>
         </div>
         {canAccessAdmin(role) && (

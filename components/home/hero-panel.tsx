@@ -81,7 +81,7 @@ export function HeroPanel() {
           initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.52, ease: EASE_OUT, delay: 0.62 } }}
           style={{ fontSize: 15.5, lineHeight: 1.68, color: "rgba(255,255,255,.4)", marginBottom: 44, maxWidth: 400 }}
         >
-          Clubs, NHS hours, announcements, events, applications, and charter workflows in one clean campus OS built specifically for the Prep community.
+          Clubs, NHS hours, announcements, events, applications, and charter workflows in one clean campus OS built specifically for the St. Joseph&apos;s Preparatory School community.
         </motion.p>
 
         {/* Pills */}
