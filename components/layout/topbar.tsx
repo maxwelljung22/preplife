@@ -86,7 +86,7 @@ export function Topbar({ user }: TopbarProps) {
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block">HawkLife Workspace</p>
+            <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block">St. Joseph&apos;s Preparatory School</p>
             <h1 className="truncate text-[18px] font-semibold tracking-[-0.04em] text-foreground sm:mt-1 sm:text-[20px]" style={{ fontFamily: "var(--font-display)" }}>
               {title}
             </h1>
@@ -97,10 +97,10 @@ export function Topbar({ user }: TopbarProps) {
           <div className="hidden 2xl:block mr-2 opacity-90">
             <BrandLogo compact className="scale-[0.92]" />
           </div>
-          <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-72 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
+          <div className="hidden xl:flex items-center gap-2 h-11 px-4 bg-card/90 border border-border/70 rounded-2xl focus-within:bg-background focus-within:border-border focus-within:shadow-glow-crimson transition-all duration-150 w-80 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
             <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
             <input
-              placeholder="Search clubs, events…"
+              placeholder="Search The Prep…"
               className="flex-1 min-w-0 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
             />
           </div>

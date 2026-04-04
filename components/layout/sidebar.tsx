@@ -66,14 +66,20 @@ function SidebarNavContent({
         className="pointer-events-none absolute inset-0 opacity-100"
         style={{
           background:
-            "radial-gradient(ellipse 140% 50% at 70% -10%, rgba(139,26,26,.16) 0%, transparent 60%)," +
-            "radial-gradient(ellipse 60% 30% at 10% 100%, rgba(154,124,46,.07) 0%, transparent 50%)",
+            "radial-gradient(ellipse 140% 50% at 68% -10%, rgba(139,26,26,.18) 0%, transparent 60%)," +
+            "radial-gradient(ellipse 70% 30% at 15% 100%, rgba(154,124,46,.08) 0%, transparent 55%)",
         }}
       />
 
       {/* Logo */}
       <div className="relative z-10 flex items-center justify-between border-b px-6 py-6" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
-        <BrandLogo />
+        <div className="space-y-3">
+          <BrandLogo />
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[hsl(var(--shell-sidebar-muted))]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#f2b15d,#d13d49)]" />
+            St. Joseph&apos;s Preparatory School
+          </div>
+        </div>
         {mobile ? (
           <button
             onClick={onNavigate}
@@ -86,9 +92,9 @@ function SidebarNavContent({
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 flex-1 px-4 py-4 overflow-y-auto space-y-1">
+      <nav className="relative z-10 flex-1 overflow-y-auto px-4 py-4 space-y-1">
         <p className="text-[9.5px] font-bold tracking-[0.14em] uppercase px-3 mb-2 mt-2" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>
-          Student Hub
+          The Prep
         </p>
         {NAV_ITEMS.map((item) => (
           <Link
@@ -96,7 +102,7 @@ function SidebarNavContent({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "relative flex items-center gap-3 px-3 py-3 rounded-2xl text-[13.5px] font-medium transition-all duration-150 border",
+              "relative flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
               isActive(item)
                 ? "shadow-sm"
                 : "hover:-translate-y-[1px]"
@@ -104,10 +110,10 @@ function SidebarNavContent({
             style={
               isActive(item)
                 ? {
-                    background: "hsl(var(--shell-sidebar-active))",
+                    background: "linear-gradient(180deg, hsl(var(--shell-sidebar-active)), hsl(var(--shell-sidebar-active) / 0.88))",
                     color: "hsl(var(--shell-sidebar-foreground))",
                     borderColor: "hsl(var(--shell-sidebar-border))",
-                    boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+                    boxShadow: "0 20px 40px rgba(2,6,23,0.22)",
                   }
                 : {
                     color: "hsl(var(--shell-sidebar-muted))",
@@ -118,8 +124,8 @@ function SidebarNavContent({
             <span
               className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{
-                background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.14), rgba(183,144,43,.14))" : "rgba(127,127,127,.08)",
-                color: isActive(item) ? "#8B1A1A" : "currentColor",
+                background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.18), rgba(183,144,43,.16))" : "rgba(255,255,255,.06)",
+                color: isActive(item) ? "#f3c07a" : "currentColor",
               }}
             >
               {item.icon}
@@ -136,15 +142,15 @@ function SidebarNavContent({
         {canAccessAdmin(user.role) && (
           <>
             <p className="text-[9.5px] font-bold tracking-[0.14em] uppercase px-3 mb-2 mt-5" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>
-              Administration
-            </p>
+            Administration
+          </p>
             {ADMIN_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-2xl text-[13.5px] font-medium transition-all duration-150 border",
+                  "flex items-center gap-3 rounded-2xl border px-3 py-3 text-[13.5px] font-medium transition-all duration-150",
                   isActive(item)
                     ? "shadow-sm"
                     : "hover:-translate-y-[1px]"
@@ -152,10 +158,10 @@ function SidebarNavContent({
                 style={
                   isActive(item)
                     ? {
-                        background: "hsl(var(--shell-sidebar-active))",
+                        background: "linear-gradient(180deg, hsl(var(--shell-sidebar-active)), hsl(var(--shell-sidebar-active) / 0.88))",
                         color: "hsl(var(--shell-sidebar-foreground))",
                         borderColor: "hsl(var(--shell-sidebar-border))",
-                        boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+                        boxShadow: "0 20px 40px rgba(2,6,23,0.22)",
                       }
                     : {
                         color: "hsl(var(--shell-sidebar-muted))",
@@ -166,8 +172,8 @@ function SidebarNavContent({
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl"
                   style={{
-                    background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.14), rgba(183,144,43,.14))" : "rgba(139,26,26,.10)",
-                    color: "#8B1A1A",
+                    background: isActive(item) ? "linear-gradient(135deg, rgba(139,26,26,.18), rgba(183,144,43,.16))" : "rgba(139,26,26,.12)",
+                    color: isActive(item) ? "#f3c07a" : "#d96565",
                   }}
                 >
                   {item.icon}
@@ -181,7 +187,7 @@ function SidebarNavContent({
 
       {/* User footer */}
       <div className="relative z-10 px-4 py-4 border-t" style={{ borderColor: "hsl(var(--shell-sidebar-border))" }}>
-        <div className="flex items-center gap-3 px-3 py-3 rounded-2xl transition-colors cursor-pointer group" style={{ background: "rgba(127,127,127,.06)" }}>
+        <div className="group flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-3 transition-colors" style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.06)" }}>
           <Avatar className="h-[30px] w-[30px] flex-shrink-0">
             <AvatarImage src={user.image ?? undefined} />
             <AvatarFallback className="text-xs font-bold text-white" style={{ background: "linear-gradient(135deg, #B8952E, #A31212)" }}>
