@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma";
 import { CalendarClient } from "./calendar-client";
 import { getSession } from "@/lib/session";
+import { canAccessFacultyTools } from "@/lib/roles";
 
 export const metadata = { title: "Calendar" };
 export const dynamic = "force-dynamic";
@@ -21,5 +22,5 @@ export default async function CalendarPage() {
       club: { select: { name: true, emoji: true, slug: true, gradientFrom: true, gradientTo: true } },
     },
   });
-  return <CalendarClient events={events as any} />;
+  return <CalendarClient events={events as any} canManageSchoolEvents={canAccessFacultyTools(session.user.role)} />;
 }

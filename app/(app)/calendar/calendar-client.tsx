@@ -1,16 +1,22 @@
 // app/(app)/calendar/calendar-client.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import type { Dispatch, SetStateAction } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, isSameDay,
   addMonths, subMonths, parseISO,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, MapPin, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Edit3, MapPin, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { createSchoolEvent, deleteSchoolEvent, updateSchoolEvent } from "./actions";
 
 interface CalEvent {
   id: string;
@@ -23,6 +29,15 @@ interface CalEvent {
   isAllDay: boolean;
   club: { name: string; emoji: string; slug: string; gradientFrom: string; gradientTo: string } | null;
 }
+
+type EventFormState = {
+  title: string;
+  description: string;
+  location: string;
+  type: CalEvent["type"];
+  startTime: string;
+  endTime: string;
+};
 
 const TYPE_COLORS: Record<string, string> = {
   MEETING:     "bg-navy/80",
@@ -47,9 +62,38 @@ function getEventDate(value: string | Date) {
   return null;
 }
 
-export function CalendarClient({ events }: { events: CalEvent[] }) {
+function toDateTimeLocal(value: string | Date) {
+  const date = getEventDate(value);
+  if (!date) return "";
+
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function createEmptyForm() {
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(14, 5, 0, 0);
+  const end = new Date(now);
+  end.setHours(14, 40, 0, 0);
+
+  return {
+    title: "",
+    description: "",
+    location: "",
+    type: "SCHOOL_WIDE",
+    startTime: toDateTimeLocal(start),
+    endTime: toDateTimeLocal(end),
+  } satisfies EventFormState;
+}
+
+export function CalendarClient({ events, canManageSchoolEvents = false }: { events: CalEvent[]; canManageSchoolEvents?: boolean }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
+  const [isPending, startTransition] = useTransition();
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [form, setForm] = useState<EventFormState>(createEmptyForm());
+  const { toast } = useToast();
   const validEvents = useMemo(
     () => events.filter((evt) => getEventDate(evt.startTime)),
     [events]
@@ -86,6 +130,101 @@ export function CalendarClient({ events }: { events: CalEvent[] }) {
     })
     .slice(0, 8);
 
+  const selectedManagedEvent = useMemo(() => {
+    if (!editingEventId) return null;
+    return validEvents.find((event) => event.id === editingEventId && !event.club) ?? null;
+  }, [editingEventId, validEvents]);
+
+  const schoolEvents = useMemo(
+    () => validEvents.filter((event) => !event.club),
+    [validEvents]
+  );
+
+  const openCreateForm = () => {
+    setEditingEventId(null);
+    setForm(createEmptyForm());
+  };
+
+  const openEditForm = (event: CalEvent) => {
+    setEditingEventId(event.id);
+    setForm({
+      title: event.title,
+      description: event.description ?? "",
+      location: event.location ?? "",
+      type: event.type,
+      startTime: toDateTimeLocal(event.startTime),
+      endTime: toDateTimeLocal(event.endTime),
+    });
+  };
+
+  const handleSubmit = () => {
+    startTransition(async () => {
+      const payload = {
+        title: form.title,
+        description: form.description,
+        location: form.location,
+        type: form.type as any,
+        startTime: form.startTime,
+        endTime: form.endTime,
+      };
+
+      const result = editingEventId
+        ? await updateSchoolEvent(editingEventId, payload)
+        : await createSchoolEvent(payload);
+
+      if ("error" in result) {
+        toast({
+          title: editingEventId ? "Couldn't update event" : "Couldn't create event",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!("event" in result)) {
+        toast({
+          title: "Couldn't update calendar",
+          description: "That school calendar event response was incomplete.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: editingEventId ? "Event updated" : "Event created",
+        description: `${result.event.title} is now on the school calendar.`,
+      });
+
+      setEditingEventId(null);
+      setForm(createEmptyForm());
+      window.location.reload();
+    });
+  };
+
+  const handleDelete = (event: CalEvent) => {
+    startTransition(async () => {
+      const result = await deleteSchoolEvent(event.id);
+      if ("error" in result) {
+        toast({
+          title: "Couldn't delete event",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Event deleted",
+        description: `${event.title} was removed from the school calendar.`,
+      });
+
+      if (editingEventId === event.id) {
+        setEditingEventId(null);
+        setForm(createEmptyForm());
+      }
+      window.location.reload();
+    });
+  };
+
   if (validEvents.length === 0) {
     return (
       <div className="space-y-6">
@@ -95,6 +234,20 @@ export function CalendarClient({ events }: { events: CalEvent[] }) {
             Activity <span className="italic">Calendar</span>
           </h1>
         </div>
+
+        {canManageSchoolEvents ? (
+          <SchoolEventManager
+            form={form}
+            setForm={setForm}
+            isPending={isPending}
+            editingEventId={editingEventId}
+            onSubmit={handleSubmit}
+            onReset={openCreateForm}
+            schoolEvents={schoolEvents}
+            onEdit={openEditForm}
+            onDelete={handleDelete}
+          />
+        ) : null}
 
         <div className="surface-card rounded-[32px] p-8 text-center sm:p-12">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] bg-muted text-2xl">
@@ -240,6 +393,20 @@ export function CalendarClient({ events }: { events: CalEvent[] }) {
 
         {/* Right panel */}
         <div className="space-y-4">
+          {canManageSchoolEvents ? (
+            <SchoolEventManager
+              form={form}
+              setForm={setForm}
+              isPending={isPending}
+              editingEventId={editingEventId}
+              onSubmit={handleSubmit}
+              onReset={openCreateForm}
+              schoolEvents={schoolEvents}
+              onEdit={openEditForm}
+              onDelete={handleDelete}
+            />
+          ) : null}
+
           {/* Selected day events */}
           <div className="hidden bg-card border border-border rounded-2xl shadow-card overflow-hidden lg:block">
             <div className="px-5 py-4 border-b border-border">
@@ -283,6 +450,148 @@ export function CalendarClient({ events }: { events: CalEvent[] }) {
               ))
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SchoolEventManager({
+  form,
+  setForm,
+  isPending,
+  editingEventId,
+  onSubmit,
+  onReset,
+  schoolEvents,
+  onEdit,
+  onDelete,
+}: {
+  form: EventFormState;
+  setForm: Dispatch<SetStateAction<EventFormState>>;
+  isPending: boolean;
+  editingEventId: string | null;
+  onSubmit: () => void;
+  onReset: () => void;
+  schoolEvents: CalEvent[];
+  onEdit: (event: CalEvent) => void;
+  onDelete: (event: CalEvent) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="surface-card rounded-[28px] p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10.5px] font-bold uppercase tracking-[.10em] text-crimson">School calendar</p>
+            <h3 className="mt-2 text-[22px] font-semibold tracking-[-0.04em] text-foreground">Manage events</h3>
+          </div>
+          <Button variant="secondary" size="sm" onClick={onReset}>
+            <Plus className="h-4 w-4" />
+            New
+          </Button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <Input
+            value={form.title}
+            onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+            placeholder="Event title"
+          />
+          <Textarea
+            value={form.description}
+            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+            placeholder="Description"
+            className="min-h-[110px]"
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              value={form.location}
+              onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
+              placeholder="Location"
+            />
+            <select
+              value={form.type}
+              onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))}
+              className="flex h-12 w-full rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-950 shadow-[0_1px_0_rgba(17,24,39,0.02)] transition-all duration-200 focus:border-neutral-300 focus:outline-none focus:ring-4 focus:ring-neutral-900/5 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-50 dark:focus:border-neutral-700 dark:focus:ring-white/10"
+            >
+              <option value="SCHOOL_WIDE">School-wide</option>
+              <option value="MEETING">Meeting</option>
+              <option value="SOCIAL">Social</option>
+              <option value="SERVICE">Service</option>
+              <option value="COMPETITION">Competition</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              type="datetime-local"
+              value={form.startTime}
+              onChange={(event) => setForm((current) => ({ ...current, startTime: event.target.value }))}
+            />
+            <Input
+              type="datetime-local"
+              value={form.endTime}
+              onChange={(event) => setForm((current) => ({ ...current, endTime: event.target.value }))}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={onSubmit} disabled={isPending}>
+              {editingEventId ? "Save changes" : "Add event"}
+            </Button>
+            {editingEventId ? (
+              <Button variant="ghost" onClick={onReset} disabled={isPending}>
+                Cancel edit
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="surface-card rounded-[28px] p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[13px] font-bold text-foreground">School-wide events</p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Faculty and admins can update events that are not tied to a club.</p>
+          </div>
+          <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
+            {schoolEvents.length} events
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {schoolEvents.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border px-4 py-8 text-center">
+              <p className="text-[13px] font-medium text-foreground">No school-wide events yet</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">Add one above and it’ll appear here right away.</p>
+            </div>
+          ) : (
+            schoolEvents.slice(0, 8).map((event) => (
+              <div key={event.id} className="rounded-2xl border border-border bg-muted/20 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-semibold text-foreground">{event.title}</p>
+                    <p className="mt-1 text-[12px] text-muted-foreground">
+                      {format(getEventDate(event.startTime) ?? new Date(), "MMM d · h:mm a")} to{" "}
+                      {format(getEventDate(event.endTime) ?? new Date(), "h:mm a")}
+                    </p>
+                    {event.location ? (
+                      <p className="mt-1 text-[12px] text-muted-foreground">{event.location}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => onEdit(event)}>
+                      <Edit3 className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => onDelete(event)}>
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
