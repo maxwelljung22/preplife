@@ -15,7 +15,7 @@ body:
     attributes:
       label: Area
       description: What part of HawkLife is affected?
-      placeholder: Example: Clubs, Applications, Flex, Admin, Calendar
+      placeholder: "Example: Clubs, Applications, Flex, Admin, Calendar"
     validations:
       required: true
   - type: textarea
@@ -42,7 +42,7 @@ body:
     attributes:
       label: Impact
       description: Who is affected and how serious is it?
-      placeholder: Example: Students cannot submit club applications.
+      placeholder: "Example: Students cannot submit club applications."
     validations:
       required: true
   - type: textarea

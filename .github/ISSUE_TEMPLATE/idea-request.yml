@@ -15,7 +15,7 @@ body:
     attributes:
       label: Area
       description: What part of HawkLife is this idea for?
-      placeholder: Example: Clubs, Applications, Attendance, Notifications, Admin
+      placeholder: "Example: Clubs, Applications, Attendance, Notifications, Admin"
     validations:
       required: true
   - type: textarea
