@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Check, PaintBucket } from "lucide-react";
+import { ArrowLeft, Check, LayoutGrid, PaintBucket } from "lucide-react";
 import { DASHBOARD_THEMES } from "@/lib/dashboard-preferences";
 import { useDashboardPreferences } from "@/components/providers/dashboard-preferences-provider";
 import { cn } from "@/lib/utils";
@@ -80,7 +80,26 @@ export function SettingsClient() {
           })}
         </div>
       </div>
+
+      <div className="surface-panel rounded-[2rem] p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]">
+            <LayoutGrid className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-display text-[1.35rem] font-semibold tracking-[-0.04em] text-foreground">Dashboard layout</h2>
+            <p className="mt-1 max-w-2xl text-[13px] leading-6 text-muted-foreground">
+              The dashboard keeps its default core widgets, but you can open the layout customizer to add, remove, resize, and rearrange the rest without cramming controls into the live view.
+            </p>
+            <Link
+              href="/dashboard"
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-4 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Open Dashboard Customizer
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-

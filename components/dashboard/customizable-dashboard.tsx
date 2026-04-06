@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { format, isToday } from "date-fns";
@@ -10,14 +10,11 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronUp,
-  Grip,
   LayoutGrid,
   Megaphone,
-  Minus,
   Pin,
   Plus,
   Sparkles,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -87,13 +84,6 @@ function sanitizeLayout(layout: DashboardLayoutWidget[]) {
   }).map((widget) => ({ ...widget, size: clampWidgetSize(widget.size) }));
 }
 
-function resizeFromDelta(initialSize: DashboardWidgetSize, deltaX: number): DashboardWidgetSize {
-  const currentIndex = DASHBOARD_WIDGET_SIZES.indexOf(initialSize);
-  const step = Math.round(deltaX / 180);
-  const nextIndex = Math.max(0, Math.min(DASHBOARD_WIDGET_SIZES.length - 1, currentIndex + step));
-  return DASHBOARD_WIDGET_SIZES[nextIndex];
-}
-
 function widgetSpanClass(size: DashboardWidgetSize) {
   if (size === 3) return "col-span-1 sm:col-span-3 xl:col-span-3";
   if (size === 6) return "col-span-1 sm:col-span-6 xl:col-span-6";
@@ -111,24 +101,18 @@ function WidgetFrame({
   title,
   icon: Icon,
   isEditing,
+  isSelected,
   isDragging,
-  onRemove,
-  onMoveUp,
-  onMoveDown,
-  onResizeStart,
-  onSetSize,
+  onSelect,
   children,
 }: {
   widget: DashboardLayoutWidget;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   isEditing: boolean;
+  isSelected: boolean;
   isDragging: boolean;
-  onRemove: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onResizeStart: (event: React.PointerEvent<HTMLButtonElement>) => void;
-  onSetSize: (size: DashboardWidgetSize) => void;
+  onSelect: () => void;
   children: React.ReactNode;
 }) {
   return (
@@ -141,8 +125,11 @@ function WidgetFrame({
       className={cn(
         "surface-panel relative overflow-hidden rounded-[2rem] p-4 sm:p-5",
         widgetSpanClass(widget.size),
-        isDragging && "z-10 shadow-[0_28px_70px_rgba(15,23,42,0.18)]"
+        isDragging && "z-10 shadow-[0_28px_70px_rgba(15,23,42,0.18)]",
+        isEditing && "cursor-grab active:cursor-grabbing",
+        isSelected && "ring-2 ring-[hsl(var(--primary)/0.45)] ring-offset-2 ring-offset-background"
       )}
+      onClick={isEditing ? onSelect : undefined}
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.13),transparent_72%)]" />
       <div className="relative z-10">
@@ -158,62 +145,15 @@ function WidgetFrame({
           </div>
 
           {isEditing ? (
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={onMoveUp}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="Move widget earlier"
-              >
-                <ChevronUp className="h-4 w-4" />
-              </button>
-              <button
-                onClick={onMoveDown}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="Move widget later"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              <button
-                onClick={onRemove}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
-                aria-label="Remove widget"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-sm">
+              <span>{widget.size === 3 ? "Small" : widget.size === 6 ? "Medium" : "Large"}</span>
+              <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
+              <span>Drag</span>
             </div>
           ) : null}
         </div>
 
         {children}
-
-        {isEditing ? (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-4">
-            <div className="flex items-center gap-2">
-              {DASHBOARD_WIDGET_SIZES.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => onSetSize(size)}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
-                    widget.size === size
-                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {size === 3 ? "Small" : size === 6 ? "Medium" : "Large"}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onPointerDown={onResizeStart}
-              className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Grip className="h-3.5 w-3.5" />
-              Resize
-            </button>
-          </div>
-        ) : null}
       </div>
     </motion.div>
   );
@@ -221,13 +161,13 @@ function WidgetFrame({
 
 export function CustomizableDashboard(data: DashboardData) {
   const storageKey = getDashboardLayoutStorageKey(data.userId);
-  const resizeStateRef = useRef<{ id: string; startX: number; startSize: DashboardWidgetSize } | null>(null);
   const [layout, setLayout] = useState<DashboardLayoutWidget[]>(DEFAULT_DASHBOARD_LAYOUT);
   const [hydrated, setHydrated] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey);
@@ -249,26 +189,15 @@ export function CustomizableDashboard(data: DashboardData) {
   }, [hydrated, layout, storageKey]);
 
   useEffect(() => {
-    const handlePointerMove = (event: PointerEvent) => {
-      const resizeState = resizeStateRef.current;
-      if (!resizeState) return;
+    if (!layout.length) {
+      setSelectedWidgetId(null);
+      return;
+    }
 
-      const nextSize = resizeFromDelta(resizeState.startSize, event.clientX - resizeState.startX);
-      setLayout((current) => current.map((widget) => (widget.id === resizeState.id ? { ...widget, size: nextSize } : widget)));
-    };
-
-    const handlePointerUp = () => {
-      resizeStateRef.current = null;
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, []);
+    if (!selectedWidgetId || !layout.some((widget) => widget.id === selectedWidgetId)) {
+      setSelectedWidgetId(layout[0].id);
+    }
+  }, [layout, selectedWidgetId]);
 
   const activeTypes = useMemo(() => new Set(layout.map((widget) => widget.type)), [layout]);
   const availableWidgets = useMemo(() => WIDGET_LIBRARY.filter((widget) => !activeTypes.has(widget.type)), [activeTypes]);
@@ -561,25 +490,162 @@ export function CustomizableDashboard(data: DashboardData) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 rounded-[2rem] border border-border bg-card/70 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Editable dashboard</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Dashboard layout</p>
           <h2 className="mt-1 font-display text-[1.4rem] font-semibold tracking-[-0.04em] text-foreground">
             Arrange your space the way you want it
           </h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-muted-foreground">
-            Add, remove, resize, and rearrange widgets. Layout changes save automatically on this device.
+            Keep the default dashboard clean, then open customization when you want to rearrange it. Layout changes save automatically on this device.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <Button variant={isEditing ? "secondary" : "primary"} size="md" onClick={() => setIsEditing((current) => !current)}>
-            {isEditing ? "Done Editing" : "Edit Dashboard"}
+            {isEditing ? "Close Customizer" : "Customize Layout"}
           </Button>
-          <Button variant="secondary" size="md" onClick={() => setPickerOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add Widget
-          </Button>
+          <Link
+            href="/profile/settings"
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            Theme Settings
+          </Link>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {isEditing ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.99 }}
+            transition={{ duration: 0.18, ease: MOTION_EASE }}
+            className="surface-panel rounded-[2rem] p-5 sm:p-6"
+          >
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Customizer</p>
+                <h3 className="mt-1 font-display text-[1.45rem] font-semibold tracking-[-0.04em] text-foreground">Edit without squishing the dashboard</h3>
+                <p className="mt-2 max-w-2xl text-[13px] leading-6 text-muted-foreground">
+                  Select a widget below, then change its size, move it up or down, or remove it. You can still drag cards directly in the grid.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" size="md" onClick={() => setPickerOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add Widget
+                </Button>
+                <Button variant="primary" size="md" onClick={() => setIsEditing(false)}>
+                  Done
+                </Button>
+              </div>
+            </div>
+
+            {layout.length ? (
+              <div className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="grid gap-3 md:grid-cols-2">
+                  {layout.map((widget, index) => {
+                    const definition = WIDGET_BY_TYPE[widget.type];
+                    const active = widget.id === selectedWidgetId;
+
+                    return (
+                      <button
+                        key={widget.id}
+                        onClick={() => setSelectedWidgetId(widget.id)}
+                        className={cn(
+                          "rounded-[1.45rem] border p-4 text-left transition-all duration-200",
+                          active
+                            ? "border-[hsl(var(--primary))] bg-card shadow-card"
+                            : "border-border bg-card/70 hover:border-[hsl(var(--primary)/0.35)] hover:bg-card"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]">
+                              <definition.icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-[14px] font-semibold text-foreground">{definition.title}</p>
+                              <p className="mt-1 text-[11.5px] text-muted-foreground">Position {index + 1}</p>
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            {widget.size === 3 ? "Small" : widget.size === 6 ? "Medium" : "Large"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedWidgetId ? (
+                  <div className="rounded-[1.6rem] border border-border bg-card/75 p-4">
+                    {(() => {
+                      const selectedWidget = layout.find((widget) => widget.id === selectedWidgetId);
+                      if (!selectedWidget) return null;
+                      const definition = WIDGET_BY_TYPE[selectedWidget.type];
+
+                      return (
+                        <>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Selected widget</p>
+                          <h4 className="mt-2 font-display text-[1.3rem] font-semibold tracking-[-0.04em] text-foreground">{definition.title}</h4>
+                          <p className="mt-2 text-[12.5px] leading-6 text-muted-foreground">{definition.description}</p>
+
+                          <div className="mt-5">
+                            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Size</p>
+                            <div className="flex flex-wrap gap-2">
+                              {DASHBOARD_WIDGET_SIZES.map((size) => (
+                                <button
+                                  key={size}
+                                  onClick={() =>
+                                    setLayout((current) => current.map((item) => (item.id === selectedWidget.id ? { ...item, size } : item)))
+                                  }
+                                  className={cn(
+                                    "rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
+                                    selectedWidget.size === size
+                                      ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+                                      : "bg-muted text-muted-foreground hover:text-foreground"
+                                  )}
+                                >
+                                  {size === 3 ? "Small" : size === 6 ? "Medium" : "Large"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => moveWidget(selectedWidget.id, -1)}
+                              className="flex h-10 items-center gap-2 rounded-2xl border border-border bg-card px-4 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                              Move Up
+                            </button>
+                            <button
+                              onClick={() => moveWidget(selectedWidget.id, 1)}
+                              className="flex h-10 items-center gap-2 rounded-2xl border border-border bg-card px-4 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                              Move Down
+                            </button>
+                            <button
+                              onClick={() => setLayout((current) => current.filter((item) => item.id !== selectedWidget.id))}
+                              className="flex h-10 items-center gap-2 rounded-2xl border border-border bg-card px-4 text-[12px] font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                            >
+                              <X className="h-4 w-4" />
+                              Remove
+                            </button>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {layout.length === 0 ? (
         <div className="surface-panel rounded-[2rem] px-6 py-12 text-center">
@@ -628,22 +694,9 @@ export function CustomizableDashboard(data: DashboardData) {
                     title={definition.title}
                     icon={definition.icon}
                     isEditing={isEditing}
+                    isSelected={selectedWidgetId === widget.id}
                     isDragging={draggingId === widget.id}
-                    onRemove={() => setLayout((current) => current.filter((item) => item.id !== widget.id))}
-                    onMoveUp={() => moveWidget(widget.id, -1)}
-                    onMoveDown={() => moveWidget(widget.id, 1)}
-                    onResizeStart={(event) => {
-                      if (!isEditing) return;
-                      event.preventDefault();
-                      resizeStateRef.current = {
-                        id: widget.id,
-                        startX: event.clientX,
-                        startSize: widget.size,
-                      };
-                    }}
-                    onSetSize={(size) =>
-                      setLayout((current) => current.map((item) => (item.id === widget.id ? { ...item, size } : item)))
-                    }
+                    onSelect={() => setSelectedWidgetId(widget.id)}
                   >
                     {renderWidgetContent(widget)}
                     {isEditing ? (
@@ -735,4 +788,3 @@ function EmptyWidgetBody({ title, description }: { title: string; description: s
     </div>
   );
 }
-
