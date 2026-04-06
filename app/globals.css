@@ -212,9 +212,10 @@
     @apply bg-background text-foreground;
     font-family: var(--font-body), system-ui, sans-serif;
     background-image:
-      radial-gradient(circle at 10% 12%, hsl(var(--theme-wash-1) / 0.18), transparent 22%),
-      radial-gradient(circle at 88% 10%, hsl(var(--theme-wash-2) / 0.16), transparent 24%),
-      radial-gradient(circle at 55% 100%, hsl(var(--theme-wash-3) / 0.12), transparent 28%),
+      linear-gradient(140deg, hsl(var(--theme-wash-1) / 0.12), transparent 36%),
+      radial-gradient(circle at 10% 12%, hsl(var(--theme-wash-1) / 0.28), transparent 26%),
+      radial-gradient(circle at 88% 10%, hsl(var(--theme-wash-2) / 0.24), transparent 28%),
+      radial-gradient(circle at 55% 100%, hsl(var(--theme-wash-3) / 0.18), transparent 34%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
     background-attachment: fixed;
     transition:
@@ -300,16 +301,17 @@
 
   .app-shell-bg {
     background:
-      radial-gradient(circle at top center, hsl(var(--theme-wash-1) / 0.16), transparent 22%),
-      radial-gradient(circle at 15% 20%, hsl(var(--theme-wash-2) / 0.14), transparent 20%),
-      radial-gradient(circle at 82% 18%, hsl(var(--theme-wash-3) / 0.12), transparent 22%),
+      linear-gradient(180deg, hsl(var(--theme-wash-1) / 0.08), transparent 18%),
+      radial-gradient(circle at top center, hsl(var(--theme-wash-1) / 0.24), transparent 26%),
+      radial-gradient(circle at 15% 20%, hsl(var(--theme-wash-2) / 0.2), transparent 24%),
+      radial-gradient(circle at 82% 18%, hsl(var(--theme-wash-3) / 0.18), transparent 26%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
   }
 
   .sidebar-bg {
     background:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.14), transparent 26%),
-      radial-gradient(circle at bottom left, hsl(var(--accent) / 0.12), transparent 28%),
+      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.22), transparent 30%),
+      radial-gradient(circle at bottom left, hsl(var(--theme-wash-2) / 0.18), transparent 30%),
       linear-gradient(180deg, hsl(var(--shell-sidebar)), hsl(var(--shell-sidebar) / 0.98));
     transition:
       background-color 220ms ease,
@@ -318,7 +320,9 @@
 
   .surface-card {
     border: 1px solid hsl(var(--border));
-    background: linear-gradient(180deg, hsl(var(--card) / 0.9), hsl(var(--card) / 0.82));
+    background:
+      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.08), transparent 38%),
+      linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.84));
     box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -331,8 +335,8 @@
   .surface-panel {
     border: 1px solid hsl(var(--border));
     background:
-      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.08), transparent 32%),
-      radial-gradient(circle at top right, hsl(var(--theme-wash-2) / 0.06), transparent 32%),
+      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.14), transparent 36%),
+      radial-gradient(circle at top right, hsl(var(--theme-wash-2) / 0.1), transparent 36%),
       linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--card) / 0.9));
     box-shadow: 0 20px 50px rgba(15,23,42,0.08);
     backdrop-filter: blur(18px);

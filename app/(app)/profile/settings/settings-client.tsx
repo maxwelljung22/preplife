@@ -3,11 +3,12 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft, Check, LayoutGrid, PaintBucket } from "lucide-react";
+import { CustomizableDashboard } from "@/components/dashboard/customizable-dashboard";
 import { DASHBOARD_THEMES } from "@/lib/dashboard-preferences";
 import { useDashboardPreferences } from "@/components/providers/dashboard-preferences-provider";
 import { cn } from "@/lib/utils";
 
-export function SettingsClient() {
+export function SettingsClient({ dashboardData }: { dashboardData: any }) {
   const { theme, setTheme } = useDashboardPreferences();
 
   return (
@@ -89,15 +90,13 @@ export function SettingsClient() {
           <div className="flex-1">
             <h2 className="font-display text-[1.35rem] font-semibold tracking-[-0.04em] text-foreground">Dashboard layout</h2>
             <p className="mt-1 max-w-2xl text-[13px] leading-6 text-muted-foreground">
-              The dashboard keeps its default core widgets, but you can open the layout customizer to add, remove, resize, and rearrange the rest without cramming controls into the live view.
+              Edit the dashboard here, not on the live dashboard page. This preview uses your real HawkLife data and saves the layout for your device.
             </p>
-            <Link
-              href="/dashboard"
-              className="mt-4 inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-4 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Open Dashboard Customizer
-            </Link>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <CustomizableDashboard {...dashboardData} embeddedInSettings />
         </div>
       </div>
     </div>

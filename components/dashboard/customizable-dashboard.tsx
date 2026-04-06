@@ -32,6 +32,7 @@ import { cn, formatRelativeTime } from "@/lib/utils";
 
 type DashboardData = {
   userId: string;
+  embeddedInSettings?: boolean;
   membershipCount: number;
   unreadNotifs: number;
   upcomingEvents: any[];
@@ -160,6 +161,7 @@ function WidgetFrame({
 }
 
 export function CustomizableDashboard(data: DashboardData) {
+  const embeddedInSettings = "embeddedInSettings" in data ? Boolean((data as DashboardData & { embeddedInSettings?: boolean }).embeddedInSettings) : false;
   const storageKey = getDashboardLayoutStorageKey(data.userId);
   const [layout, setLayout] = useState<DashboardLayoutWidget[]>(DEFAULT_DASHBOARD_LAYOUT);
   const [hydrated, setHydrated] = useState(false);
@@ -490,12 +492,16 @@ export function CustomizableDashboard(data: DashboardData) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 rounded-[2rem] border border-border bg-card/70 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Dashboard layout</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {embeddedInSettings ? "Dashboard preview" : "Dashboard layout"}
+          </p>
           <h2 className="mt-1 font-display text-[1.4rem] font-semibold tracking-[-0.04em] text-foreground">
-            Arrange your space the way you want it
+            {embeddedInSettings ? "Preview and edit your dashboard" : "Arrange your space the way you want it"}
           </h2>
           <p className="mt-2 max-w-2xl text-[13px] leading-6 text-muted-foreground">
-            Keep the default dashboard clean, then open customization when you want to rearrange it. Layout changes save automatically on this device.
+            {embeddedInSettings
+              ? "This is where people customize their dashboard. The main dashboard stays clean, and layout changes save automatically on this device."
+              : "Keep the default dashboard clean, then open customization when you want to rearrange it. Layout changes save automatically on this device."}
           </p>
         </div>
 
@@ -503,12 +509,14 @@ export function CustomizableDashboard(data: DashboardData) {
           <Button variant={isEditing ? "secondary" : "primary"} size="md" onClick={() => setIsEditing((current) => !current)}>
             {isEditing ? "Close Customizer" : "Customize Layout"}
           </Button>
-          <Link
-            href="/profile/settings"
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            Theme Settings
-          </Link>
+          {!embeddedInSettings ? (
+            <Link
+              href="/profile/settings"
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-border bg-card px-5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Theme Settings
+            </Link>
+          ) : null}
         </div>
       </div>
 
