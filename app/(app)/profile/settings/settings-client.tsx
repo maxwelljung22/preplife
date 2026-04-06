@@ -2,13 +2,12 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowLeft, Check, LayoutGrid, PaintBucket } from "lucide-react";
-import { CustomizableDashboard } from "@/components/dashboard/customizable-dashboard";
+import { ArrowLeft, Check, PaintBucket } from "lucide-react";
 import { DASHBOARD_THEMES } from "@/lib/dashboard-preferences";
 import { useDashboardPreferences } from "@/components/providers/dashboard-preferences-provider";
 import { cn } from "@/lib/utils";
 
-export function SettingsClient({ dashboardData }: { dashboardData: any }) {
+export function SettingsClient() {
   const { theme, setTheme } = useDashboardPreferences();
 
   return (
@@ -79,24 +78,6 @@ export function SettingsClient({ dashboardData }: { dashboardData: any }) {
               </motion.button>
             );
           })}
-        </div>
-      </div>
-
-      <div className="surface-panel rounded-[2rem] p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]">
-            <LayoutGrid className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <h2 className="font-display text-[1.35rem] font-semibold tracking-[-0.04em] text-foreground">Dashboard layout</h2>
-            <p className="mt-1 max-w-2xl text-[13px] leading-6 text-muted-foreground">
-              Edit the dashboard here, not on the live dashboard page. This preview uses your real HawkLife data and saves the layout for your device.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <CustomizableDashboard {...dashboardData} embeddedInSettings />
         </div>
       </div>
     </div>

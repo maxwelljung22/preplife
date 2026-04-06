@@ -7,24 +7,6 @@ export type DashboardThemeId =
   | "graphite"
   | "rose";
 
-export type DashboardWidgetType =
-  | "today-overview"
-  | "upcoming-deadlines"
-  | "my-tasks"
-  | "announcements"
-  | "my-clubs"
-  | "calendar"
-  | "activity-feed"
-  | "pinned-items";
-
-export type DashboardWidgetSize = 3 | 6 | 12;
-
-export interface DashboardLayoutWidget {
-  id: string;
-  type: DashboardWidgetType;
-  size: DashboardWidgetSize;
-}
-
 export const DASHBOARD_THEME_STORAGE_KEY = "hawklife-dashboard-theme";
 
 export const DASHBOARD_THEMES: Array<{
@@ -78,22 +60,3 @@ export const DASHBOARD_THEMES: Array<{
 ] as const;
 
 export const DEFAULT_DASHBOARD_THEME: DashboardThemeId = "crimson";
-
-export const DASHBOARD_WIDGET_SIZES: DashboardWidgetSize[] = [3, 6, 12];
-
-export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutWidget[] = [
-  { id: "widget-today-overview", type: "today-overview", size: 6 },
-  { id: "widget-upcoming-deadlines", type: "upcoming-deadlines", size: 6 },
-  { id: "widget-my-tasks", type: "my-tasks", size: 12 },
-];
-
-export function getDashboardLayoutStorageKey(userId: string) {
-  return `hawklife-dashboard-layout:${userId}`;
-}
-
-export function clampWidgetSize(size: number): DashboardWidgetSize {
-  if (size <= 3) return 3;
-  if (size <= 6) return 6;
-  return 12;
-}
-
