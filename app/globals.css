@@ -34,12 +34,17 @@
     --shell-sidebar-hover: 0 0% 100%;
     --shell-sidebar-active: 0 0% 100%;
     --shell-topbar: 0 0% 100% / 0.78;
+    --background-base: 30 20% 98%;
+    --background-elevated: 28 18% 95%;
     --theme-wash-1: 0 68% 32%;
     --theme-wash-2: 38 48% 42%;
     --theme-wash-3: 222 44% 68%;
   }
 
   :root[data-dashboard-theme="crimson"] {
+    --background: 16 45% 95%;
+    --background-base: 14 48% 94%;
+    --background-elevated: 18 40% 90%;
     --primary: 0 68% 32%;
     --accent: 38 48% 42%;
     --ring: 0 68% 32%;
@@ -49,6 +54,9 @@
   }
 
   :root[data-dashboard-theme="ocean"] {
+    --background: 201 58% 94%;
+    --background-base: 203 55% 93%;
+    --background-elevated: 199 48% 88%;
     --primary: 199 89% 43%;
     --accent: 217 91% 60%;
     --ring: 199 89% 43%;
@@ -58,6 +66,9 @@
   }
 
   :root[data-dashboard-theme="emerald"] {
+    --background: 154 42% 94%;
+    --background-base: 151 44% 93%;
+    --background-elevated: 149 34% 88%;
     --primary: 158 72% 35%;
     --accent: 145 63% 42%;
     --ring: 158 72% 35%;
@@ -67,6 +78,9 @@
   }
 
   :root[data-dashboard-theme="sunset"] {
+    --background: 28 70% 94%;
+    --background-base: 24 72% 93%;
+    --background-elevated: 30 62% 87%;
     --primary: 22 82% 48%;
     --accent: 41 90% 45%;
     --ring: 22 82% 48%;
@@ -76,6 +90,9 @@
   }
 
   :root[data-dashboard-theme="violet"] {
+    --background: 262 52% 95%;
+    --background-base: 260 50% 94%;
+    --background-elevated: 261 38% 89%;
     --primary: 258 84% 56%;
     --accent: 270 76% 61%;
     --ring: 258 84% 56%;
@@ -85,6 +102,9 @@
   }
 
   :root[data-dashboard-theme="graphite"] {
+    --background: 216 18% 93%;
+    --background-base: 216 16% 92%;
+    --background-elevated: 215 14% 86%;
     --primary: 221 39% 30%;
     --accent: 215 20% 45%;
     --ring: 221 39% 30%;
@@ -94,6 +114,9 @@
   }
 
   :root[data-dashboard-theme="rose"] {
+    --background: 338 56% 95%;
+    --background-base: 336 58% 94%;
+    --background-elevated: 338 42% 89%;
     --primary: 332 79% 40%;
     --accent: 343 71% 55%;
     --ring: 332 79% 40%;
@@ -104,6 +127,8 @@
 
   .dark {
     --background: 222 22% 8%;
+    --background-base: 222 22% 8%;
+    --background-elevated: 222 18% 12%;
     --foreground: 32 15% 94%;
     --card: 220 16% 11%;
     --card-foreground: 30 10% 93%;
@@ -135,6 +160,9 @@
   }
 
   .dark[data-dashboard-theme="crimson"] {
+    --background: 358 26% 10%;
+    --background-base: 358 28% 9%;
+    --background-elevated: 0 22% 14%;
     --primary: 0 55% 48%;
     --accent: 40 50% 60%;
     --ring: 0 55% 48%;
@@ -144,6 +172,9 @@
   }
 
   .dark[data-dashboard-theme="ocean"] {
+    --background: 208 38% 10%;
+    --background-base: 210 40% 9%;
+    --background-elevated: 205 28% 14%;
     --primary: 197 100% 58%;
     --accent: 217 91% 68%;
     --ring: 197 100% 58%;
@@ -153,6 +184,9 @@
   }
 
   .dark[data-dashboard-theme="emerald"] {
+    --background: 160 24% 10%;
+    --background-base: 162 26% 9%;
+    --background-elevated: 158 20% 14%;
     --primary: 158 72% 48%;
     --accent: 142 69% 58%;
     --ring: 158 72% 48%;
@@ -162,6 +196,9 @@
   }
 
   .dark[data-dashboard-theme="sunset"] {
+    --background: 20 34% 10%;
+    --background-base: 18 36% 9%;
+    --background-elevated: 24 28% 14%;
     --primary: 24 94% 58%;
     --accent: 43 96% 62%;
     --ring: 24 94% 58%;
@@ -171,6 +208,9 @@
   }
 
   .dark[data-dashboard-theme="violet"] {
+    --background: 256 28% 11%;
+    --background-base: 257 30% 9%;
+    --background-elevated: 258 24% 15%;
     --primary: 263 94% 67%;
     --accent: 270 95% 75%;
     --ring: 263 94% 67%;
@@ -180,6 +220,9 @@
   }
 
   .dark[data-dashboard-theme="graphite"] {
+    --background: 216 16% 10%;
+    --background-base: 218 17% 9%;
+    --background-elevated: 214 12% 14%;
     --primary: 217 19% 64%;
     --accent: 214 20% 74%;
     --ring: 217 19% 64%;
@@ -189,6 +232,9 @@
   }
 
   .dark[data-dashboard-theme="rose"] {
+    --background: 336 24% 10%;
+    --background-base: 336 26% 9%;
+    --background-elevated: 336 20% 14%;
     --primary: 333 85% 66%;
     --accent: 343 92% 73%;
     --ring: 333 85% 66%;
@@ -212,10 +258,10 @@
     @apply bg-background text-foreground;
     font-family: var(--font-body), system-ui, sans-serif;
     background-image:
-      linear-gradient(140deg, hsl(var(--theme-wash-1) / 0.12), transparent 36%),
-      radial-gradient(circle at 10% 12%, hsl(var(--theme-wash-1) / 0.28), transparent 26%),
-      radial-gradient(circle at 88% 10%, hsl(var(--theme-wash-2) / 0.24), transparent 28%),
-      radial-gradient(circle at 55% 100%, hsl(var(--theme-wash-3) / 0.18), transparent 34%),
+      linear-gradient(145deg, hsl(var(--background-base)), hsl(var(--background-elevated))),
+      radial-gradient(circle at 12% 14%, hsl(var(--theme-wash-1) / 0.34), transparent 30%),
+      radial-gradient(circle at 85% 12%, hsl(var(--theme-wash-2) / 0.3), transparent 32%),
+      radial-gradient(circle at 50% 100%, hsl(var(--theme-wash-3) / 0.24), transparent 38%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
     background-attachment: fixed;
     transition:
@@ -301,11 +347,10 @@
 
   .app-shell-bg {
     background:
-      linear-gradient(180deg, hsl(var(--theme-wash-1) / 0.08), transparent 18%),
-      radial-gradient(circle at top center, hsl(var(--theme-wash-1) / 0.24), transparent 26%),
-      radial-gradient(circle at 15% 20%, hsl(var(--theme-wash-2) / 0.2), transparent 24%),
-      radial-gradient(circle at 82% 18%, hsl(var(--theme-wash-3) / 0.18), transparent 26%),
-      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
+      linear-gradient(180deg, hsl(var(--background-base)), hsl(var(--background-elevated))),
+      radial-gradient(circle at top center, hsl(var(--theme-wash-1) / 0.28), transparent 28%),
+      radial-gradient(circle at 15% 20%, hsl(var(--theme-wash-2) / 0.24), transparent 26%),
+      radial-gradient(circle at 82% 18%, hsl(var(--theme-wash-3) / 0.22), transparent 28%);
   }
 
   .sidebar-bg {
@@ -321,8 +366,8 @@
   .surface-card {
     border: 1px solid hsl(var(--border));
     background:
-      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.08), transparent 38%),
-      linear-gradient(180deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.84));
+      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.1), transparent 40%),
+      linear-gradient(180deg, hsl(var(--card) / 0.94), hsl(var(--card) / 0.86));
     box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -335,8 +380,8 @@
   .surface-panel {
     border: 1px solid hsl(var(--border));
     background:
-      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.14), transparent 36%),
-      radial-gradient(circle at top right, hsl(var(--theme-wash-2) / 0.1), transparent 36%),
+      radial-gradient(circle at top left, hsl(var(--theme-wash-1) / 0.18), transparent 38%),
+      radial-gradient(circle at top right, hsl(var(--theme-wash-2) / 0.14), transparent 38%),
       linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--card) / 0.9));
     box-shadow: 0 20px 50px rgba(15,23,42,0.08);
     backdrop-filter: blur(18px);
