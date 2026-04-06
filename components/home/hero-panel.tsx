@@ -23,7 +23,7 @@ export function HeroPanel() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[#06080e] px-5 py-6 text-white shadow-[0_40px_120px_rgba(0,0,0,0.34)] sm:px-7 sm:py-8 lg:px-8 lg:py-9 xl:flex-[1.15]">
+    <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#06080e] px-4 py-5 text-white shadow-[0_40px_120px_rgba(0,0,0,0.34)] sm:rounded-[32px] sm:px-7 sm:py-8 lg:px-8 lg:py-9 xl:flex-[1.15]">
       <div
         className="absolute inset-0"
         style={{
@@ -45,7 +45,7 @@ export function HeroPanel() {
 
       <motion.div
         aria-hidden="true"
-        className="absolute left-1/2 top-12 h-[260px] w-[260px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(118,80,255,.22),transparent_68%)] blur-3xl"
+        className="absolute left-1/2 top-10 h-[220px] w-[220px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(118,80,255,.22),transparent_68%)] blur-3xl sm:top-12 sm:h-[260px] sm:w-[260px]"
         animate={reduceMotion ? {} : { scale: [1, 1.06, 0.98, 1], opacity: [0.8, 1, 0.88, 0.8] }}
         transition={{ duration: 12, ease: "easeInOut", repeat: Infinity }}
       />
@@ -55,7 +55,7 @@ export function HeroPanel() {
           <BrandLogo tone="inverse" />
         </div>
 
-        <div className="my-10 max-w-[700px]">
+        <div className="my-8 max-w-[700px] sm:my-10">
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.55, ease: EASE_OUT } }}
@@ -66,7 +66,7 @@ export function HeroPanel() {
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.72, ease: EASE_OUT, delay: 0.08 } }}
-              className="text-balance text-[clamp(42px,7vw,88px)] font-semibold leading-[0.94] tracking-[-0.08em]"
+              className="text-balance text-[clamp(34px,12vw,88px)] font-semibold leading-[0.94] tracking-[-0.08em]"
               style={{ fontFamily: "Satoshi, var(--font-body)" }}
             >
               HawkLife
@@ -74,7 +74,7 @@ export function HeroPanel() {
             <motion.p
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT, delay: 0.16 } }}
-              className="mt-5 max-w-[540px] text-balance text-[15px] leading-7 text-white/58 sm:text-[16px]"
+              className="mt-4 max-w-[30rem] text-balance text-[14px] leading-6 text-white/58 sm:mt-5 sm:text-[16px] sm:leading-7"
             >
               A cleaner home for clubs, announcements, NHS hours, and schedules at St. Joe&apos;s Prep.
             </motion.p>
@@ -82,13 +82,13 @@ export function HeroPanel() {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.62, ease: EASE_OUT, delay: 0.24 } }}
-              className="mt-8 max-w-[600px] rounded-[30px] border border-white/10 bg-white/[0.04] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+              className="mt-7 max-w-[600px] rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-5"
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/42">What HawkLife does best</p>
-              <p className="mt-3 text-[28px] font-semibold tracking-[-0.06em] text-white sm:text-[34px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
+              <p className="mt-3 text-[24px] font-semibold tracking-[-0.06em] text-white sm:text-[34px]" style={{ fontFamily: "Satoshi, var(--font-body)" }}>
                 Student life, without the mess.
               </p>
-              <p className="mt-3 max-w-[420px] text-[13px] leading-7 text-white/52">
+              <p className="mt-3 max-w-[420px] text-[12.5px] leading-6 text-white/52 sm:text-[13px] sm:leading-7">
                 One place for students, leaders, and faculty to keep up with what matters across St. Joseph&apos;s Preparatory School.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
@@ -97,7 +97,7 @@ export function HeroPanel() {
                     key={item}
                     whileHover={reduceMotion ? undefined : { y: -2, scale: 1.02 }}
                     transition={{ duration: 0.16 }}
-                    className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-[12px] text-white/74"
+                    className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/74 sm:text-[12px]"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0, transition: { delay: 0.32 + index * 0.05, duration: 0.35, ease: EASE_OUT } }}
                   >
@@ -110,7 +110,7 @@ export function HeroPanel() {
                   <motion.div
                     key={panel.title}
                     whileHover={reduceMotion ? undefined : { y: -3 }}
-                    className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-4"
+                    className="rounded-[20px] border border-white/8 bg-white/[0.03] px-4 py-4 sm:rounded-[22px]"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0, transition: { delay: 0.44 + index * 0.06, duration: 0.35, ease: EASE_OUT } }}
                   >
@@ -128,7 +128,7 @@ export function HeroPanel() {
             </motion.div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-white/8 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-white/8 pt-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-white/32 sm:pt-5 sm:text-[10px] sm:flex-row sm:items-center sm:justify-between">
           <span>Philadelphia, PA</span>
           <span>HawkLife for St. Joseph&apos;s Preparatory School</span>
         </div>

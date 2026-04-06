@@ -29,19 +29,34 @@ export function AppShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hydrated, setHydrated] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("hawklife:sidebar-open");
-    if (stored !== null) {
-      setSidebarOpen(stored === "true");
-    }
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const syncSidebarState = (matchesDesktop: boolean) => {
+      setIsDesktop(matchesDesktop);
+
+      if (!matchesDesktop) {
+        setSidebarOpen(false);
+        return;
+      }
+
+      const stored = window.localStorage.getItem("hawklife:sidebar-open");
+      setSidebarOpen(stored !== null ? stored === "true" : true);
+    };
+
+    syncSidebarState(mediaQuery.matches);
+    const handleChange = (event: MediaQueryListEvent) => syncSidebarState(event.matches);
+    mediaQuery.addEventListener("change", handleChange);
     setHydrated(true);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !isDesktop) return;
     window.localStorage.setItem("hawklife:sidebar-open", String(sidebarOpen));
-  }, [hydrated, sidebarOpen]);
+  }, [hydrated, isDesktop, sidebarOpen]);
 
   return (
     <div className="app-shell-bg flex min-h-screen bg-background">

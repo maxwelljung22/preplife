@@ -145,7 +145,7 @@ function IntroSceneFrame({ children, align = "center" }: { children: ReactNode; 
       animate="animate"
       exit="exit"
       className={cn(
-        "absolute inset-0 flex w-full items-center px-6 pb-14 pt-24 sm:px-10 sm:pb-16 sm:pt-28",
+        "absolute inset-0 flex w-full items-center px-5 pb-10 pt-24 sm:px-10 sm:pb-16 sm:pt-28",
         align === "center" ? "justify-center text-center" : "justify-center"
       )}
     >
@@ -157,12 +157,12 @@ function IntroSceneFrame({ children, align = "center" }: { children: ReactNode; 
 function WelcomeScene() {
   return (
     <IntroSceneFrame>
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-[#f8c96d]/70">HawkLife</p>
         <h1 className="max-w-5xl text-balance font-display text-[clamp(3rem,10vw,7rem)] font-semibold tracking-[-0.08em] text-white">
           Welcome to HawkLife
         </h1>
-        <p className="mx-auto max-w-2xl text-balance text-base text-white/58 sm:text-lg">
+        <p className="mx-auto max-w-[19rem] text-balance text-sm leading-6 text-white/58 sm:max-w-2xl sm:text-lg">
           A calmer, brighter way to move through the school day.
         </p>
       </div>
@@ -173,12 +173,12 @@ function WelcomeScene() {
 function SubtitleScene() {
   return (
     <IntroSceneFrame>
-      <div className="space-y-6">
+      <div className="space-y-5 sm:space-y-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.4em] text-[#7dd3fc]/70">HawkLife</p>
         <h2 className="max-w-4xl text-balance font-display text-[clamp(2.6rem,8vw,6rem)] font-semibold tracking-[-0.08em] text-white">
           Your school. Reimagined.
         </h2>
-        <p className="mx-auto max-w-2xl text-balance text-base text-white/54 sm:text-lg">
+        <p className="mx-auto max-w-[20rem] text-balance text-sm leading-6 text-white/54 sm:max-w-2xl sm:text-lg">
           Every tool, update, and moment flows together in one beautiful place.
         </p>
       </div>
@@ -206,7 +206,7 @@ function FeaturesScene({ featureIndex }: { featureIndex: number }) {
             </motion.h2>
           </AnimatePresence>
         </div>
-        <p className="mt-8 max-w-2xl text-balance text-white/52">
+        <p className="mt-6 max-w-[20rem] text-balance text-sm leading-6 text-white/52 sm:mt-8 sm:max-w-2xl sm:text-base">
           Designed to feel less like software and more like your campus coming alive.
         </p>
       </div>
@@ -222,9 +222,9 @@ function QrScene() {
           initial={{ opacity: 0, scale: 0.84, rotateX: 18 }}
           animate={{ opacity: 1, scale: 1, rotateX: 0 }}
           transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-[2rem] border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.14),rgba(255,255,255,0.05))] p-4 shadow-[0_36px_100px_rgba(56,189,248,0.14)] backdrop-blur-xl sm:p-5"
+          className="rounded-[1.7rem] border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.14),rgba(255,255,255,0.05))] p-3.5 shadow-[0_36px_100px_rgba(56,189,248,0.14)] backdrop-blur-xl sm:rounded-[2rem] sm:p-5"
         >
-          <div className="grid grid-cols-9 gap-1 rounded-[1.35rem] bg-[linear-gradient(135deg,#ffffff_0%,#fefce8_100%)] p-4 sm:p-5">
+          <div className="grid grid-cols-9 gap-1 rounded-[1.15rem] bg-[linear-gradient(135deg,#ffffff_0%,#fefce8_100%)] p-3.5 sm:rounded-[1.35rem] sm:p-5">
             {QR_PATTERN.map((cell, index) => (
               <motion.span
                 key={index}
@@ -243,7 +243,7 @@ function QrScene() {
         <h2 className="mt-4 max-w-3xl text-balance font-display text-[clamp(2.2rem,7vw,5.2rem)] font-semibold tracking-[-0.08em] text-white">
           Real attendance. Instantly.
         </h2>
-        <p className="mt-5 max-w-2xl text-balance text-white/56">
+        <p className="mt-4 max-w-[20rem] text-balance text-sm leading-6 text-white/56 sm:mt-5 sm:max-w-2xl sm:text-base">
           Crisp scans, quick check-ins, and a little glow to make the utility feel premium.
         </p>
       </div>
@@ -254,7 +254,7 @@ function QrScene() {
 function PhoneScene() {
   return (
     <IntroSceneFrame>
-      <div className="grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+      <div className="grid w-full max-w-5xl items-center gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
@@ -265,7 +265,7 @@ function PhoneScene() {
           <h2 className="mt-5 text-balance font-display text-[clamp(2.4rem,7vw,5.5rem)] font-semibold tracking-[-0.08em] text-white">
             Built for your phone.
           </h2>
-          <p className="mt-5 max-w-xl text-balance text-white/56 lg:max-w-lg">
+          <p className="mt-4 max-w-[20rem] text-balance text-sm leading-6 text-white/56 sm:text-base lg:mt-5 lg:max-w-lg">
             Elegant enough for a launch video, practical enough for every announcement, flex check-in, and update.
           </p>
         </motion.div>
@@ -274,14 +274,14 @@ function PhoneScene() {
           initial={{ opacity: 0, scale: 0.9, y: 30, rotate: -3 }}
           animate={{ opacity: 1, scale: 1, y: 0, rotate: 0 }}
           transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
-          className="order-1 mx-auto w-full max-w-[18rem] rounded-[2.8rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05))] p-3 shadow-[0_42px_160px_rgba(244,63,94,0.12)] lg:order-2"
+          className="order-1 mx-auto w-full max-w-[16.25rem] rounded-[2.35rem] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.05))] p-2.5 shadow-[0_42px_160px_rgba(244,63,94,0.12)] sm:max-w-[18rem] sm:rounded-[2.8rem] sm:p-3 lg:order-2"
         >
-          <div className="rounded-[2.25rem] border border-white/10 bg-[radial-gradient(circle_at_top,#1e293b_0%,#020617_72%)] px-4 pb-5 pt-4">
-            <div className="mx-auto h-1.5 w-20 rounded-full bg-white/14" />
-            <div className="mt-5 rounded-[1.8rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4">
+          <div className="rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top,#1e293b_0%,#020617_72%)] px-3.5 pb-4.5 pt-3.5 sm:rounded-[2.25rem] sm:px-4 sm:pb-5 sm:pt-4">
+            <div className="mx-auto h-1.5 w-16 rounded-full bg-white/14 sm:w-20" />
+            <div className="mt-4 rounded-[1.55rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3.5 sm:mt-5 sm:rounded-[1.8rem] sm:p-4">
               <p className="text-[10px] uppercase tracking-[0.24em] text-[#f8c96d]/70">Today at Prep</p>
-              <p className="mt-3 font-display text-[1.6rem] tracking-[-0.06em] text-white">Everything in one place</p>
-              <div className="mt-5 space-y-3">
+              <p className="mt-3 font-display text-[1.42rem] tracking-[-0.06em] text-white sm:text-[1.6rem]">Everything in one place</p>
+              <div className="mt-4 space-y-2.5 sm:mt-5 sm:space-y-3">
                 {[
                   { label: "Flex check-in", dot: "bg-amber-300" },
                   { label: "Club announcements", dot: "bg-sky-300" },
@@ -292,9 +292,9 @@ function PhoneScene() {
                     initial={{ opacity: 0, x: 16 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.55, delay: 0.24 + index * 0.16 }}
-                    className="flex items-center justify-between rounded-[1.15rem] border border-white/8 bg-white/[0.05] px-4 py-3"
+                    className="flex items-center justify-between rounded-[1rem] border border-white/8 bg-white/[0.05] px-3.5 py-2.5 sm:rounded-[1.15rem] sm:px-4 sm:py-3"
                   >
-                    <span className="text-[0.94rem] text-white/84">{item.label}</span>
+                    <span className="text-[0.88rem] text-white/84 sm:text-[0.94rem]">{item.label}</span>
                     <span className={cn("h-2.5 w-2.5 rounded-full shadow-[0_0_18px_currentColor]", item.dot)} />
                   </motion.div>
                 ))}
@@ -330,7 +330,7 @@ function StartScene() {
         <h2 className="text-balance font-display text-[clamp(2.8rem,8vw,5.8rem)] font-semibold tracking-[-0.08em] text-white">
           Let&apos;s get started.
         </h2>
-        <p className="mx-auto max-w-2xl text-balance text-white/56">
+        <p className="mx-auto max-w-[20rem] text-balance text-sm leading-6 text-white/56 sm:max-w-2xl sm:text-base">
           Slower, softer, brighter. The product should feel as polished as the idea.
         </p>
       </div>
@@ -433,6 +433,7 @@ function IntroSequence({
         transition={{ duration: 0.6, delay: 1.6 }}
         onClick={handleSkip}
         className="absolute right-4 top-4 z-10 rounded-full border border-white/12 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/[0.12] hover:text-white sm:right-8 sm:top-8"
+        style={{ top: "max(1rem, env(safe-area-inset-top))" }}
       >
         Skip
       </motion.button>

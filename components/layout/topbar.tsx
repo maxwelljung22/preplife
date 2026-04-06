@@ -85,14 +85,14 @@ export function Topbar({ user, onToggleSidebar, unreadNotifications, notificatio
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 flex min-h-[72px] items-center justify-between gap-3 border-b px-4 sm:px-6 lg:px-8 topbar-glass transition-all duration-200",
+          "sticky top-0 z-40 flex min-h-[68px] items-center justify-between gap-2 border-b px-3.5 sm:min-h-[72px] sm:gap-3 sm:px-6 lg:px-8 topbar-glass transition-all duration-200",
           scrolled ? "border-border shadow-[0_16px_40px_rgba(15,23,42,0.08)]" : "border-transparent"
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <button
             onClick={onToggleSidebar}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card sm:h-11 sm:w-11 sm:rounded-2xl"
             aria-label="Toggle navigation"
           >
             <Menu className="h-4 w-4" />
@@ -100,13 +100,13 @@ export function Topbar({ user, onToggleSidebar, unreadNotifications, notificatio
 
           <div className="min-w-0 flex-1">
             <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:block">St. Joseph&apos;s Preparatory School</p>
-            <h1 className="truncate text-[18px] font-semibold tracking-[-0.04em] text-foreground sm:mt-1 sm:text-[20px]" style={{ fontFamily: "var(--font-display)" }}>
+            <h1 className="truncate pr-1 text-[16px] font-semibold tracking-[-0.04em] text-foreground sm:mt-1 sm:text-[20px]" style={{ fontFamily: "var(--font-display)" }}>
               {title}
             </h1>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <div className="hidden 2xl:block mr-2 opacity-90">
             <BrandLogo compact className="scale-[0.92]" />
           </div>
@@ -120,7 +120,7 @@ export function Topbar({ user, onToggleSidebar, unreadNotifications, notificatio
 
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card sm:h-11 sm:w-11 sm:rounded-2xl"
             title="Toggle theme"
             aria-label="Toggle theme"
           >
@@ -130,7 +130,7 @@ export function Topbar({ user, onToggleSidebar, unreadNotifications, notificatio
           <div ref={notifRef} className="relative">
             <button
               onClick={() => setNotifOpen((v) => !v)}
-              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card"
+              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/70 bg-card/90 text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-muted hover:text-foreground hover:shadow-card sm:h-11 sm:w-11 sm:rounded-2xl"
               aria-label="Open notifications"
               aria-expanded={notifOpen}
               aria-haspopup="dialog"
@@ -180,7 +180,7 @@ export function Topbar({ user, onToggleSidebar, unreadNotifications, notificatio
           </div>
 
           <Link href="/profile" aria-label="Open profile">
-            <Avatar className="h-10 w-10 cursor-pointer ring-2 ring-transparent shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:ring-crimson/30">
+            <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-transparent shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:ring-crimson/30 sm:h-10 sm:w-10">
               <AvatarImage src={user.image ?? undefined} />
               <AvatarFallback className="text-white text-[11px] font-bold" style={{ background: "linear-gradient(135deg, #B8952E, #A31212)" }}>
                 {initials(user.name)}
