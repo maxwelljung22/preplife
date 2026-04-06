@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { canManageClubMembershipRole } from "@/lib/roles";
+import { canAccessAdmin, canManageClubMembershipRole } from "@/lib/roles";
 import { ClubLandingClient } from "@/components/clubs/club-landing-client";
 import { isV4Enabled } from "@/lib/feature-flags";
 
@@ -10,7 +10,7 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-async function getClubByIdentifier(identifier: string, userId: string) {
+async function getClubByIdentifier(identifier: string, userId: string, userRole: string) {
   const select = Prisma.validator<Prisma.ClubSelect>()({
     id: true,
     slug: true,
@@ -29,6 +29,25 @@ async function getClubByIdentifier(identifier: string, userId: string) {
     gradientTo: true,
     bannerUrl: true,
     _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+    memberships: {
+      where: { status: "ACTIVE" },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+      select: {
+        id: true,
+        userId: true,
+        role: true,
+        joinedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            grade: true,
+          },
+        },
+      },
+    },
     posts: {
       orderBy: { createdAt: "desc" },
       take: 3,
@@ -69,7 +88,7 @@ async function getClubByIdentifier(identifier: string, userId: string) {
     select: { status: true, role: true },
   });
 
-  const isLeader = canManageClubMembershipRole(membership?.role);
+  const isLeader = canAccessAdmin(userRole as any) || canManageClubMembershipRole(membership?.role);
 
   const [appForm, currentApplication, applications] = await Promise.all([
     prisma.appForm.findUnique({
@@ -121,6 +140,7 @@ async function getClubByIdentifier(identifier: string, userId: string) {
 
   return {
     club,
+    membership,
     joined: membership?.status === "ACTIVE",
     isLeader,
     appForm,
@@ -146,8 +166,8 @@ export default async function ClubPage({ params }: Props) {
   if (!session?.user) return null;
 
   const { slug } = await params;
-  const data = await getClubByIdentifier(slug, session.user.id);
+  const data = await getClubByIdentifier(slug, session.user.id, session.user.role);
   if (!data) notFound();
 
-  return <ClubLandingClient {...data} v4Enabled={isV4Enabled()} />;
+  return <ClubLandingClient {...data} userId={session.user.id} userRole={session.user.role} v4Enabled={isV4Enabled()} />;
 }

@@ -338,7 +338,7 @@ function StartScene() {
   );
 }
 
-function IntroSequence({
+export function IntroSequence({
   onDismiss,
   persistSeen,
 }: {
