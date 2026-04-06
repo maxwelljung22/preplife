@@ -125,7 +125,6 @@ function WidgetFrame({
       transition={{ duration: 0.2, ease: MOTION_EASE }}
       className={cn(
         "surface-panel relative overflow-hidden rounded-[2rem] p-4 sm:p-5",
-        widgetSpanClass(widget.size),
         isDragging && "z-10 shadow-[0_28px_70px_rgba(15,23,42,0.18)]",
         isEditing && "cursor-grab active:cursor-grabbing",
         isSelected && "ring-2 ring-[hsl(var(--primary)/0.45)] ring-offset-2 ring-offset-background"
@@ -695,7 +694,10 @@ export function CustomizableDashboard(data: DashboardData) {
                     setDraggingId(null);
                     setDragOverId(null);
                   }}
-                  className={cn(dragOverId === widget.id && "rounded-[2rem] ring-2 ring-[hsl(var(--primary)/0.35)] ring-offset-2 ring-offset-background")}
+                  className={cn(
+                    widgetSpanClass(widget.size),
+                    dragOverId === widget.id && "rounded-[2rem] ring-2 ring-[hsl(var(--primary)/0.35)] ring-offset-2 ring-offset-background"
+                  )}
                 >
                   <WidgetFrame
                     widget={widget}
