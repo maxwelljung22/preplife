@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { canAccessAdmin, canManageClubMembershipRole } from "@/lib/roles";
 import { ClubLandingClient } from "@/components/clubs/club-landing-client";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -76,14 +77,98 @@ async function getClubByIdentifier(identifier: string, userId: string, userRole:
       },
     },
   });
-
-  const club = await prisma.club.findFirst({
-    where: {
-      isActive: true,
-      OR: [{ id: identifier }, { slug: identifier }],
+  const legacySelect = Prisma.validator<Prisma.ClubSelect>()({
+    id: true,
+    slug: true,
+    name: true,
+    emoji: true,
+    tagline: true,
+    description: true,
+    category: true,
+    commitment: true,
+    tags: true,
+    requiresApp: true,
+    meetingDay: true,
+    meetingTime: true,
+    meetingRoom: true,
+    gradientFrom: true,
+    gradientTo: true,
+    bannerUrl: true,
+    _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+    memberships: {
+      where: { status: "ACTIVE" },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+      select: {
+        id: true,
+        userId: true,
+        role: true,
+        joinedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            grade: true,
+          },
+        },
+      },
     },
-    select,
+    posts: {
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        author: { select: { id: true, name: true, image: true } },
+      },
+    },
+    events: {
+      where: { startTime: { gte: new Date() } },
+      orderBy: { startTime: "asc" },
+      take: 3,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        location: true,
+        startTime: true,
+      },
+    },
   });
+  let club;
+  try {
+    club = await prisma.club.findFirst({
+      where: {
+        isActive: true,
+        OR: [{ id: identifier }, { slug: identifier }],
+      },
+      select,
+    });
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) throw error;
+
+    club = await prisma.club.findFirst({
+      where: {
+        isActive: true,
+        OR: [{ id: identifier }, { slug: identifier }],
+      },
+      select: legacySelect,
+    });
+
+    club = club
+      ? {
+          ...club,
+          logoUrl: null,
+          pendingEditRequest: null,
+          pendingEditSubmittedAt: null,
+          pendingEditSubmittedById: null,
+          pendingEditStatus: null,
+        }
+      : null;
+  }
 
   if (!club) return null;
 
@@ -158,7 +243,7 @@ export async function generateMetadata({ params }: Props) {
   const club = await prisma.club.findFirst({
     where: { OR: [{ id: slug }, { slug }] },
     select: { name: true, tagline: true },
-  });
+  }).catch(() => null);
   return {
     title: club ? `${club.name} — Clubs` : "Club",
     description: club?.tagline ?? "Club workspace and collaboration hub",

@@ -6,6 +6,7 @@ import { ClubsClient } from "./clubs-client";
 import { ClubsSkeleton } from "./clubs-skeleton";
 import type { ClubCategory, CommitmentLevel } from "@prisma/client";
 import { getSession } from "@/lib/session";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 
 export const metadata = { title: "Club Directory" };
 export const dynamic = "force-dynamic";
@@ -48,18 +49,49 @@ async function getClubs(userId: string, params: SearchParams) {
     requiresApp: true,
     _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
   });
+  const legacyClubSelect = Prisma.validator<Prisma.ClubSelect>()({
+    id: true,
+    slug: true,
+    name: true,
+    emoji: true,
+    tagline: true,
+    description: true,
+    category: true,
+    commitment: true,
+    tags: true,
+    gradientFrom: true,
+    gradientTo: true,
+    meetingDay: true,
+    meetingTime: true,
+    meetingRoom: true,
+    requiresApp: true,
+    _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+  });
+  const membershipsPromise = prisma.membership.findMany({
+    where: { userId, status: "ACTIVE" },
+    select: { clubId: true },
+  });
 
-  const [clubs, memberships] = await Promise.all([
-    prisma.club.findMany({
+  let clubs;
+  try {
+    clubs = await prisma.club.findMany({
       where,
       orderBy: [{ memberships: { _count: "desc" } }, { name: "asc" }],
       select: clubSelect,
-    }),
-    prisma.membership.findMany({
-      where: { userId, status: "ACTIVE" },
-      select: { clubId: true },
-    }),
-  ]);
+    });
+  } catch (error) {
+    if (!isPrismaSchemaMismatchError(error)) throw error;
+
+    clubs = (
+      await prisma.club.findMany({
+        where,
+        orderBy: [{ memberships: { _count: "desc" } }, { name: "asc" }],
+        select: legacyClubSelect,
+      })
+    ).map((club) => ({ ...club, logoUrl: null }));
+  }
+
+  const memberships = await membershipsPromise;
 
   const joinedIds = new Set(memberships.map((m) => m.clubId));
   return clubs.map((c) => ({ ...c, joined: joinedIds.has(c.id) }));

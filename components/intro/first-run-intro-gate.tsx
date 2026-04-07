@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { completeAccountSetup } from "@/app/(app)/profile/actions";
 import { cn } from "@/lib/utils";
 
@@ -456,6 +457,7 @@ export function FirstRunIntroGate({
   shouldShowInitially: boolean;
   shouldRequireAccountSetup: boolean;
 }) {
+  const router = useRouter();
   const storageKey = `hawklife:intro-seen:${userId}`;
   const [shouldShow, setShouldShow] = useState(false);
   const [shouldShowAccountSetup, setShouldShowAccountSetup] = useState(false);
@@ -511,10 +513,16 @@ export function FirstRunIntroGate({
 
   const handleSelectClass = async (graduationYear: number) => {
     setIsSavingSetup(true);
+    setShouldShowAccountSetup(false);
     const result = await completeAccountSetup(graduationYear);
     setIsSavingSetup(false);
-    if (result?.error) return;
-    setShouldShowAccountSetup(false);
+    if (result?.error) {
+      setShouldShowAccountSetup(true);
+      return;
+    }
+    startTransition(() => {
+      router.refresh();
+    });
   };
 
   return (

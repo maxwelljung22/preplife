@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { canAccessFacultyTools } from "@/lib/roles";
+import { canAccessAdmin, canAccessFacultyTools } from "@/lib/roles";
 import { FacultySessionManager } from "@/components/attendance/faculty-session-manager";
 import { AttendanceSetupNotice } from "@/components/attendance/attendance-setup-notice";
 import { getFlexBlockWindow } from "@/lib/flex-attendance";
@@ -14,13 +14,26 @@ export default async function FacultyCreateSessionPage() {
   const session = await getSession();
   if (!session?.user) redirect("/auth/signin");
   if (!canAccessFacultyTools(session.user.role)) redirect("/dashboard");
+  const isAdmin = canAccessAdmin(session.user.role);
 
   const { date } = getFlexBlockWindow();
+  const advisedClubIds = !isAdmin
+    ? (
+        await prisma.membership.findMany({
+          where: {
+            userId: session.user.id,
+            status: "ACTIVE",
+            role: "FACULTY_ADVISOR",
+          },
+          select: { clubId: true },
+        })
+      ).map((membership) => membership.clubId)
+    : [];
 
   try {
     const [clubs, students, sessions] = await Promise.all([
       prisma.club.findMany({
-        where: { isActive: true },
+        where: isAdmin ? { isActive: true } : { isActive: true, id: { in: advisedClubIds } },
         orderBy: { name: "asc" },
         select: {
           id: true,
@@ -44,7 +57,12 @@ export default async function FacultyCreateSessionPage() {
         },
       }),
       prisma.attendanceSession.findMany({
-        where: { date },
+        where: isAdmin
+          ? { date }
+          : {
+              date,
+              OR: [{ clubId: null }, { clubId: { in: advisedClubIds } }],
+            },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,

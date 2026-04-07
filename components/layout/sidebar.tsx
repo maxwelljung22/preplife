@@ -9,7 +9,7 @@ import {
 import { signOut } from "next-auth/react";
 import { cn, initials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { canAccessAdmin, canAccessOversight, getRoleBadgeClass, getRoleLabel } from "@/lib/roles";
+import { canAccessAdmin, canAccessFacultyTools, getRoleBadgeClass, getRoleLabel } from "@/lib/roles";
 import type { UserRole } from "@prisma/client";
 import { BrandLogo } from "./brand-logo";
 
@@ -55,10 +55,14 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+const FACULTY_ITEMS: NavItem[] = [
+  { label: "Faculty Dashboard", href: "/faculty", icon: <ShieldCheck className="h-4 w-4" />, exact: true },
+  { label: "Create Session", href: "/faculty/create-session", icon: <PlusSquare className="h-4 w-4" /> },
+];
+
 const ADMIN_ITEMS: NavItem[] = [
   { label: "Admin Panel", href: "/admin", icon: <ShieldCheck className="h-4 w-4" />, exact: true },
   { label: "Charters", href: "/admin/charters", icon: <Rocket className="h-4 w-4" /> },
-  { label: "Create Session", href: "/faculty/create-session", icon: <PlusSquare className="h-4 w-4" /> },
 ];
 
 export interface ShellUser {
@@ -166,14 +170,21 @@ function SidebarNavContent({
           </div>
         ))}
 
-        {canAccessOversight(user.role) && (
+        {canAccessFacultyTools(user.role) && (
           <div className="space-y-1.5">
             <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>
               Faculty Controls
             </p>
-            {ADMIN_ITEMS.filter((item) => item.href !== "/admin/charters" || canAccessAdmin(user.role)).map((item) =>
-              renderNavItem(item, "faculty")
-            )}
+            {FACULTY_ITEMS.map((item) => renderNavItem(item, "faculty"))}
+          </div>
+        )}
+
+        {canAccessAdmin(user.role) && (
+          <div className="space-y-1.5">
+            <p className="px-3 text-[9.5px] font-bold uppercase tracking-[0.14em]" style={{ color: "hsl(var(--shell-sidebar-muted))" }}>
+              Admin Controls
+            </p>
+            {ADMIN_ITEMS.map((item) => renderNavItem(item, "faculty"))}
           </div>
         )}
       </nav>

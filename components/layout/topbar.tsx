@@ -24,6 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/nhs":           "NHS Hours",
   "/admin":         "Admin Panel",
   "/admin/charters": "Charter Reviews",
+  "/faculty":       "Faculty Dashboard",
   "/faculty/create-session": "Create Session",
   "/club":          "Attendance QR",
   "/profile":       "Profile",
