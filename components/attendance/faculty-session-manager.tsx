@@ -9,7 +9,12 @@ import { CalendarDays, CheckCircle2, Clock3, Download, MapPin, Plus, QrCode, Sea
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { createFlexSession, deleteFlexSession, markFlexAttendanceManually } from "@/app/(app)/flex/actions";
+import {
+  addStudentsToFlexSession,
+  createFlexSession,
+  deleteFlexSession,
+  markFlexAttendanceManually,
+} from "@/app/(app)/flex/actions";
 import { FLEX_BLOCK_LABEL, getAttendanceStatusLabel, getSessionTypeLabel } from "@/lib/flex-attendance";
 import { cn } from "@/lib/utils";
 import { QrDisplay } from "@/components/attendance/qr-display";
@@ -30,6 +35,7 @@ type SessionItem = {
   attendeeCount: number;
   hostName: string;
   isOpen: boolean;
+  date: string;
   attendees: {
     id: string;
     status: AttendanceStatus;
@@ -71,6 +77,7 @@ export function FacultySessionManager({
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [bulkStudentIds, setBulkStudentIds] = useState<string[]>([]);
+  const [reportView, setReportView] = useState<"recorded" | "missing" | "absent">("recorded");
   const isAdmin = currentRole === "ADMIN";
   const [form, setForm] = useState({
     title: "",
@@ -78,7 +85,11 @@ export function FacultySessionManager({
     clubId: "",
     location: "",
     capacity: "24",
+    recurrenceEnabled: false,
+    recurrenceWeeks: "6",
+    recurrenceDays: [new Date().getDay()] as number[],
   });
+  const todayKey = new Date().toDateString();
 
   const selectedClub = useMemo(
     () => clubs.find((club) => club.id === form.clubId) ?? null,
@@ -86,6 +97,10 @@ export function FacultySessionManager({
   );
 
   const selectedQrSession = sessions.find((session) => session.id === selectedQrSessionId) ?? null;
+  const todaySessions = sessions.filter((session) => new Date(session.date).toDateString() === todayKey);
+  const upcomingSessions = sessions.filter((session) => new Date(session.date) > new Date() && new Date(session.date).toDateString() !== todayKey);
+  const historySessions = sessions.filter((session) => new Date(session.date) < new Date(new Date().setHours(0, 0, 0, 0)));
+  const selectedDateKey = selectedQrSession ? new Date(selectedQrSession.date).toDateString() : null;
   const availableStudents = useMemo(() => {
     const query = studentQuery.trim().toLowerCase();
     const classFiltered = classFilter === "all"
@@ -100,30 +115,47 @@ export function FacultySessionManager({
       .slice(0, 30);
   }, [classFilter, studentQuery, students]);
 
-  const signedUpUserIds = useMemo(
-    () => new Set(sessions.flatMap((session) => session.attendees.map((attendee) => attendee.user.id))),
-    [sessions]
-  );
+  const flexDateSignedUpUserIds = useMemo(() => {
+    if (!selectedDateKey) return new Set<string>();
 
-  const unsignedStudents = useMemo(
-    () => students.filter((student) => !signedUpUserIds.has(student.id)),
-    [signedUpUserIds, students]
-  );
+    return new Set(
+      sessions
+        .filter((session) => new Date(session.date).toDateString() === selectedDateKey)
+        .flatMap((session) => session.attendees.map((attendee) => attendee.user.id))
+    );
+  }, [selectedDateKey, sessions]);
 
-  const selectedSessionUnsignedStudents = useMemo(() => {
-    if (!selectedQrSession) return [];
-    const currentIds = new Set(selectedQrSession.attendees.map((attendee) => attendee.user.id));
-    return students.filter((student) => !currentIds.has(student.id));
-  }, [selectedQrSession, students]);
+  const missingFlexSignupStudents = useMemo(
+    () => students.filter((student) => !flexDateSignedUpUserIds.has(student.id)),
+    [flexDateSignedUpUserIds, students]
+  );
 
   const attendanceSummary = useMemo(() => {
     if (!selectedQrSession) return null;
+    const absent = selectedQrSession.attendees.filter(
+      (attendee) => attendee.status === "ABSENT" || attendee.status === "ABSENT_EXCUSED"
+    );
+
     return {
-      absent: selectedQrSession.attendees.filter((attendee) => attendee.status === "ABSENT"),
+      absent,
       absentExcused: selectedQrSession.attendees.filter((attendee) => attendee.status === "ABSENT_EXCUSED"),
       lateExcused: selectedQrSession.attendees.filter((attendee) => attendee.status === "LATE_EXCUSED"),
     };
   }, [selectedQrSession]);
+
+  const effectiveSelectedIds = useMemo(() => {
+    if (bulkStudentIds.length > 0) return Array.from(new Set(bulkStudentIds));
+    return selectedStudentId ? [selectedStudentId] : [];
+  }, [bulkStudentIds, selectedStudentId]);
+
+  const visibleReportAttendees = useMemo(() => {
+    if (!selectedQrSession) return [];
+    if (reportView === "absent") {
+      return attendanceSummary?.absent ?? [];
+    }
+
+    return selectedQrSession.attendees;
+  }, [attendanceSummary, reportView, selectedQrSession]);
 
   const handleCreate = () => {
     startTransition(async () => {
@@ -133,6 +165,8 @@ export function FacultySessionManager({
         clubId: form.type === "CLUB" ? form.clubId : undefined,
         location: form.location || selectedClub?.meetingRoom || "",
         capacity: Number(form.capacity),
+        recurringWeekdays: form.recurrenceEnabled ? form.recurrenceDays : [],
+        recurrenceWeeks: Number(form.recurrenceWeeks),
       });
 
       if ("error" in result) {
@@ -146,7 +180,9 @@ export function FacultySessionManager({
 
       toast({
         title: "Session created",
-        description: `${result.session.title} is live for today's flex block.`,
+        description: result.createdCount > 1
+          ? `${result.createdCount} flex sessions were scheduled for ${result.session.title}.`
+          : `${result.session.title} is live for today's flex block.`,
       });
       setForm({
         title: "",
@@ -154,7 +190,11 @@ export function FacultySessionManager({
         clubId: "",
         location: "",
         capacity: "24",
+        recurrenceEnabled: false,
+        recurrenceWeeks: "6",
+        recurrenceDays: [new Date().getDay()],
       });
+      setReportView("recorded");
       setSelectedQrSessionId(result.session.id);
       router.refresh();
     });
@@ -176,14 +216,17 @@ export function FacultySessionManager({
         title: "Session removed",
         description: "That flex session is no longer available to students.",
       });
-      if (selectedQrSessionId === sessionId) setSelectedQrSessionId(null);
+      if (selectedQrSessionId === sessionId) {
+        setSelectedQrSessionId(null);
+        setReportView("recorded");
+      }
       router.refresh();
     });
   };
 
   const handleManualMark = (status: AttendanceStatus, userId?: string | string[]) => {
     if (!selectedQrSession) return;
-    const targetUserId = userId ?? (bulkStudentIds.length > 0 ? bulkStudentIds : selectedStudentId);
+    const targetUserId = userId ?? effectiveSelectedIds;
     if (!targetUserId || (Array.isArray(targetUserId) && targetUserId.length === 0)) {
       toast({
         title: "Choose a student first",
@@ -217,6 +260,48 @@ export function FacultySessionManager({
     });
   };
 
+  const handleBulkAdd = (userIds?: string | string[]) => {
+    if (!selectedQrSession) return;
+    const targetUserIds = userIds ?? effectiveSelectedIds;
+    if (!targetUserIds || (Array.isArray(targetUserIds) && targetUserIds.length === 0)) {
+      toast({
+        title: "Choose students first",
+        description: "Select one or more students to add to this flex roster.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await addStudentsToFlexSession(selectedQrSession.id, targetUserIds);
+      if ("error" in result) {
+        toast({
+          title: "Couldn't add students",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Roster updated",
+        description: result.updatedCount > 1
+          ? `${result.updatedCount} students were added to ${result.title}.`
+          : `${result.studentName} was added to ${result.title}.`,
+      });
+      setSelectedStudentId("");
+      setStudentQuery("");
+      setBulkStudentIds([]);
+      router.refresh();
+    });
+  };
+
+  const toggleBulkStudent = (studentId: string) => {
+    setBulkStudentIds((current) =>
+      current.includes(studentId) ? current.filter((value) => value !== studentId) : [...current, studentId]
+    );
+  };
+
   const getStatusClass = (status: AttendanceStatus) => {
     switch (status) {
       case "PRESENT":
@@ -234,9 +319,10 @@ export function FacultySessionManager({
     }
   };
 
-  const exportAttendance = (format: "csv" | "pdf") => {
-    if (!selectedQrSession) return;
-    window.location.href = `/api/flex/export?sessionId=${selectedQrSession.id}&format=${format}`;
+  const exportAttendance = (format: "csv" | "pdf", sessionId?: string) => {
+    const targetSessionId = sessionId ?? selectedQrSession?.id;
+    if (!targetSessionId) return;
+    window.location.href = `/api/flex/export?sessionId=${targetSessionId}&format=${format}`;
   };
 
   return (
@@ -251,7 +337,7 @@ export function FacultySessionManager({
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.06em] text-foreground sm:text-[3.2rem]">Create flex sessions</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-[15px]">
           Open club meetings, study halls, and special events for today&apos;s flex window. Each session gets a live
-          attendance QR that refreshes automatically.
+          attendance QR that refreshes automatically, or you can keep the same QR for printing.
         </p>
       </section>
 
@@ -330,6 +416,62 @@ export function FacultySessionManager({
               />
             </label>
 
+            <div className="rounded-[28px] border border-border bg-muted/35 p-4">
+              <label className="inline-flex items-center gap-3 text-sm font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  checked={form.recurrenceEnabled}
+                  onChange={(event) => setForm((current) => ({ ...current, recurrenceEnabled: event.target.checked }))}
+                  className="h-4 w-4 rounded border-border"
+                />
+                Create this as a recurring flex block
+              </label>
+
+              {form.recurrenceEnabled ? (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Repeat on</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label, weekday) => {
+                        const active = form.recurrenceDays.includes(weekday);
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() =>
+                              setForm((current) => ({
+                                ...current,
+                                recurrenceDays: current.recurrenceDays.includes(weekday)
+                                  ? current.recurrenceDays.filter((value) => value !== weekday)
+                                  : [...current.recurrenceDays, weekday].sort((a, b) => a - b),
+                              }))
+                            }
+                            className={cn(
+                              "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                              active ? "border-[hsl(var(--primary)/0.35)] bg-[hsl(var(--primary)/0.08)] text-foreground" : "border-border bg-background text-muted-foreground"
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <label className="space-y-2 text-sm font-medium text-foreground">
+                    <span>Number of weeks</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={form.recurrenceWeeks}
+                      onChange={(event) => setForm((current) => ({ ...current, recurrenceWeeks: event.target.value }))}
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
             <Button size="lg" className="w-full" onClick={handleCreate} disabled={isPending}>
               <Plus className="h-4 w-4" />
               Create session
@@ -350,13 +492,13 @@ export function FacultySessionManager({
             </div>
 
             <div className="mt-5 grid gap-4">
-              {sessions.length === 0 ? (
-                <div className="rounded-[28px] border border-dashed border-border p-8 text-center">
-                  <p className="text-base font-semibold text-foreground">No sessions yet</p>
-                  <p className="mt-2 text-sm text-muted-foreground">Create the first flex destination for students above.</p>
-                </div>
-              ) : (
-                sessions.map((session, index) => (
+                {todaySessions.length === 0 ? (
+                  <div className="rounded-[28px] border border-dashed border-border p-8 text-center">
+                    <p className="text-base font-semibold text-foreground">No sessions yet</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Create the first flex destination for students above.</p>
+                  </div>
+                ) : (
+                todaySessions.map((session, index) => (
                   <motion.div
                     key={session.id}
                     initial={{ opacity: 0, y: 8 }}
@@ -390,15 +532,18 @@ export function FacultySessionManager({
                       </div>
 
                         <div className="flex flex-wrap gap-2">
-                        <Button variant="secondary" onClick={() => exportAttendance("csv")}>
+                        <Button variant="secondary" onClick={() => exportAttendance("csv", session.id)}>
                           <Download className="h-4 w-4" />
                           Spreadsheet
                         </Button>
-                        <Button variant="secondary" onClick={() => exportAttendance("pdf")}>
+                        <Button variant="secondary" onClick={() => exportAttendance("pdf", session.id)}>
                           <Download className="h-4 w-4" />
                           PDF
                         </Button>
-                        <Button variant="secondary" onClick={() => setSelectedQrSessionId(session.id)}>
+                        <Button variant="secondary" onClick={() => {
+                          setSelectedQrSessionId(session.id);
+                          setReportView("recorded");
+                        }}>
                           <QrCode className="h-4 w-4" />
                           Show QR
                         </Button>
@@ -479,24 +624,41 @@ export function FacultySessionManager({
                         <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
                           {availableStudents.map((student) => {
                             const active = selectedStudentId === student.id;
+                            const bulkSelected = bulkStudentIds.includes(student.id);
                             return (
-                              <button
+                              <div
                                 key={student.id}
-                                type="button"
-                                onClick={() => setSelectedStudentId(student.id)}
                                 className={cn(
-                                  "flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left transition-colors",
-                                  active ? "border-[hsl(var(--primary)/0.26)] bg-[hsl(var(--primary)/0.06)]" : "border-border bg-background hover:bg-muted/50"
+                                  "flex items-center gap-2 rounded-2xl border px-3 py-3 transition-colors",
+                                  active || bulkSelected
+                                    ? "border-[hsl(var(--primary)/0.26)] bg-[hsl(var(--primary)/0.06)]"
+                                    : "border-border bg-background hover:bg-muted/50"
                                 )}
                               >
-                                <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStudentId(student.id)}
+                                  className="min-w-0 flex-1 text-left"
+                                >
                                   <p className="truncate text-sm font-medium text-foreground">{student.name || "Unnamed student"}</p>
                                   <p className="truncate text-xs text-muted-foreground">
                                     {student.email || "No email"}{student.graduationYear ? ` · Class of ${student.graduationYear}` : ""}
                                   </p>
-                                </div>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleBulkStudent(student.id)}
+                                  className={cn(
+                                    "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                                    bulkSelected
+                                      ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.12)] text-foreground"
+                                      : "border-border bg-background text-muted-foreground"
+                                  )}
+                                >
+                                  {bulkSelected ? "Selected" : "Select"}
+                                </button>
                                 {active ? <CheckCircle2 className="h-4 w-4 text-[hsl(var(--primary))]" /> : null}
-                              </button>
+                              </div>
                             );
                           })}
                         </div>
@@ -510,7 +672,7 @@ export function FacultySessionManager({
                                 type="button"
                                 onClick={() =>
                                   setBulkStudentIds(
-                                    availableStudents
+                                    students
                                       .filter((student) => student.graduationYear === year)
                                       .map((student) => student.id)
                                   )
@@ -520,29 +682,49 @@ export function FacultySessionManager({
                                 Class of {year}
                               </button>
                             ))}
+                            <button
+                              type="button"
+                              onClick={() => setBulkStudentIds(availableStudents.map((student) => student.id))}
+                              className="rounded-full border border-border bg-muted px-3 py-1.5 text-[12px] font-medium text-foreground"
+                            >
+                              Select filtered
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBulkStudentIds([])}
+                              className="rounded-full border border-border bg-background px-3 py-1.5 text-[12px] font-medium text-muted-foreground"
+                            >
+                              Clear
+                            </button>
                           </div>
-                          <p className="mt-2 text-[12px] text-muted-foreground">{bulkStudentIds.length} students selected for bulk actions</p>
+                          <p className="mt-2 text-[12px] text-muted-foreground">{effectiveSelectedIds.length} students ready for bulk actions</p>
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-2">
-                          <Button size="lg" onClick={() => handleManualMark("PRESENT")} disabled={isPending || !selectedStudentId}>
+                          {isAdmin ? (
+                            <Button variant="secondary" size="lg" onClick={() => handleBulkAdd()} disabled={isPending || effectiveSelectedIds.length === 0}>
+                              <Plus className="h-4 w-4" />
+                              Add selected
+                            </Button>
+                          ) : null}
+                          <Button size="lg" onClick={() => handleManualMark("PRESENT")} disabled={isPending || effectiveSelectedIds.length === 0}>
                             <CheckCircle2 className="h-4 w-4" />
                             Mark present
                           </Button>
-                          <Button variant="secondary" size="lg" onClick={() => handleManualMark("LATE")} disabled={isPending || !selectedStudentId}>
+                          <Button variant="secondary" size="lg" onClick={() => handleManualMark("LATE")} disabled={isPending || effectiveSelectedIds.length === 0}>
                             <Timer className="h-4 w-4" />
                             Mark late
                           </Button>
-                          <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT")} disabled={isPending || (!selectedStudentId && bulkStudentIds.length === 0)}>
+                          <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT")} disabled={isPending || effectiveSelectedIds.length === 0}>
                             Mark absent
                           </Button>
                           {isAdmin ? (
-                            <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT_EXCUSED")} disabled={isPending || (!selectedStudentId && bulkStudentIds.length === 0)}>
+                            <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT_EXCUSED")} disabled={isPending || effectiveSelectedIds.length === 0}>
                               Absent excused
                             </Button>
                           ) : null}
                           {isAdmin ? (
-                            <Button variant="secondary" size="lg" onClick={() => handleManualMark("LATE_EXCUSED")} disabled={isPending || (!selectedStudentId && bulkStudentIds.length === 0)}>
+                            <Button variant="secondary" size="lg" onClick={() => handleManualMark("LATE_EXCUSED")} disabled={isPending || effectiveSelectedIds.length === 0}>
                               Late excused
                             </Button>
                           ) : null}
@@ -553,22 +735,42 @@ export function FacultySessionManager({
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recorded attendees</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Joined and manually marked students for this session.</p>
+                            <p className="mt-1 text-sm text-muted-foreground">Review the live roster, missing flex signups, and students marked absent.</p>
                           </div>
                           <div className="rounded-full border border-border bg-muted/70 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                            {selectedSessionUnsignedStudents.length} not signed up
+                            {missingFlexSignupStudents.length} not signed up
                           </div>
                         </div>
 
                         <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                          <div className="rounded-[20px] border border-border bg-muted/35 px-4 py-3">
+                          <button
+                            type="button"
+                            onClick={() => setReportView("missing")}
+                            className={cn(
+                              "rounded-[20px] border px-4 py-3 text-left transition-colors",
+                              reportView === "missing"
+                                ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)]"
+                                : "border-border bg-muted/35"
+                            )}
+                          >
                             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Not signed up</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{selectedSessionUnsignedStudents.length}</p>
-                          </div>
-                          <div className="rounded-[20px] border border-border bg-muted/35 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Absent</p>
+                            <p className="mt-2 text-xl font-semibold text-foreground">{missingFlexSignupStudents.length}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">Across this flex date</p>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setReportView("absent")}
+                            className={cn(
+                              "rounded-[20px] border px-4 py-3 text-left transition-colors",
+                              reportView === "absent"
+                                ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)]"
+                                : "border-border bg-muted/35"
+                            )}
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Marked absent</p>
                             <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.absent.length ?? 0}</p>
-                          </div>
+                            <p className="mt-1 text-[11px] text-muted-foreground">This session only</p>
+                          </button>
                           <div className="rounded-[20px] border border-border bg-muted/35 px-4 py-3">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Absent Excused</p>
                             <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.absentExcused.length ?? 0}</p>
@@ -579,16 +781,75 @@ export function FacultySessionManager({
                           </div>
                         </div>
 
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {[
+                            { key: "recorded", label: "Recorded roster" },
+                            { key: "missing", label: "Missing signup" },
+                            { key: "absent", label: "Absent list" },
+                          ].map((view) => (
+                            <button
+                              key={view.key}
+                              type="button"
+                              onClick={() => setReportView(view.key as "recorded" | "missing" | "absent")}
+                              className={cn(
+                                "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
+                                reportView === view.key
+                                  ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)] text-foreground"
+                                  : "border-border bg-background text-muted-foreground"
+                              )}
+                            >
+                              {view.label}
+                            </button>
+                          ))}
+                        </div>
+
                         <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
-                          {selectedQrSession.attendees.length === 0 ? (
+                          {reportView === "missing" ? (
+                            missingFlexSignupStudents.length === 0 ? (
+                              <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-center">
+                                <p className="text-sm font-medium text-foreground">Everyone picked a flex block</p>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                  No students are missing a flex signup for this date.
+                                </p>
+                              </div>
+                            ) : (
+                              missingFlexSignupStudents.map((student) => (
+                                <div key={student.id} className="rounded-[24px] border border-border bg-muted/30 p-4">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-medium text-foreground">{student.name || "Unnamed student"}</p>
+                                      <p className="truncate text-xs text-muted-foreground">
+                                        {student.email || "No email"}{student.graduationYear ? ` · Class of ${student.graduationYear}` : ""}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      <span className="inline-flex rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                                        Not signed up
+                                      </span>
+                                      {isAdmin ? (
+                                        <Button size="sm" variant="secondary" onClick={() => handleBulkAdd(student.id)} disabled={isPending}>
+                                          <Plus className="h-4 w-4" />
+                                          Add to session
+                                        </Button>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            )
+                          ) : visibleReportAttendees.length === 0 ? (
                             <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-center">
-                              <p className="text-sm font-medium text-foreground">No one recorded yet</p>
+                              <p className="text-sm font-medium text-foreground">
+                                {reportView === "absent" ? "No absences recorded" : "No one recorded yet"}
+                              </p>
                               <p className="mt-2 text-xs text-muted-foreground">
-                                Students will appear here after they join or when you mark them manually.
+                                {reportView === "absent"
+                                  ? "Students marked absent will appear here."
+                                  : "Students will appear here after they join or when you mark them manually."}
                               </p>
                             </div>
                           ) : (
-                            selectedQrSession.attendees.map((attendee) => (
+                            visibleReportAttendees.map((attendee) => (
                               <div key={attendee.id} className="rounded-[24px] border border-border bg-muted/30 p-4">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                   <div className="min-w-0">
@@ -610,6 +871,12 @@ export function FacultySessionManager({
                                   </div>
                                 </div>
                                 <div className="mt-3 flex flex-wrap gap-2">
+                                  {isAdmin ? (
+                                    <Button size="sm" variant="secondary" onClick={() => handleBulkAdd(attendee.user.id)} disabled={isPending}>
+                                      <Plus className="h-4 w-4" />
+                                      Add
+                                    </Button>
+                                  ) : null}
                                   <Button size="sm" onClick={() => handleManualMark("PRESENT", attendee.user.id)} disabled={isPending}>
                                     Mark present
                                   </Button>
@@ -641,6 +908,84 @@ export function FacultySessionManager({
               </motion.div>
             ) : null}
           </AnimatePresence>
+
+          <div className="surface-card rounded-[32px] p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Upcoming recurring blocks</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">Scheduled flex sessions</h2>
+              </div>
+              <div className="rounded-full border border-border bg-muted/70 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
+                {upcomingSessions.length} upcoming
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {upcomingSessions.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-border p-6 text-sm text-muted-foreground">
+                  No upcoming recurring flex blocks yet.
+                </div>
+              ) : (
+                upcomingSessions.slice(0, 10).map((session) => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedQrSessionId(session.id);
+                      setReportView("recorded");
+                    }}
+                    className="flex items-center justify-between rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{session.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(session.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · {session.location}
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-medium text-muted-foreground">{getSessionTypeLabel(session.type)}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="surface-card rounded-[32px] p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">History</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">Flex block history</h2>
+              </div>
+              <div className="rounded-full border border-border bg-muted/70 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
+                {historySessions.length} past
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3">
+              {historySessions.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-border p-6 text-sm text-muted-foreground">
+                  No past sessions yet.
+                </div>
+              ) : (
+                historySessions.slice(0, 12).map((session) => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedQrSessionId(session.id);
+                      setReportView("recorded");
+                    }}
+                    className="flex items-center justify-between rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{session.title}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(session.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · {session.attendeeCount} recorded
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-medium text-muted-foreground">{getSessionTypeLabel(session.type)}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
         </section>
       </div>
     </motion.div>

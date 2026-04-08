@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Clock3, ShieldCheck } from "lucide-react";
+import { Clock3, Printer, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FLEX_BLOCK_LABEL } from "@/lib/flex-attendance";
 
 type QrState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; qrValue: string; expiresAt: number; refreshSeconds: number };
+  | { status: "ready"; qrValue: string; expiresAt: number | null; refreshSeconds: number | null; mode: "rotating" | "static" };
 
-async function fetchQrState(sessionId: string): Promise<QrState> {
-  const response = await fetch(`/api/flex/qr?sessionId=${encodeURIComponent(sessionId)}`, {
+async function fetchQrState(sessionId: string, mode: "rotating" | "static"): Promise<QrState> {
+  const response = await fetch(`/api/flex/qr?sessionId=${encodeURIComponent(sessionId)}&mode=${mode}`, {
     cache: "no-store",
   });
 
@@ -21,12 +21,13 @@ async function fetchQrState(sessionId: string): Promise<QrState> {
     return { status: "error", message: data.error || "Couldn't refresh the QR code." };
   }
 
-  const data = (await response.json()) as { qrValue: string; expiresAt: number; refreshSeconds: number };
+  const data = (await response.json()) as { qrValue: string; expiresAt: number | null; refreshSeconds: number | null; mode?: "rotating" | "static" };
   return {
     status: "ready",
     qrValue: data.qrValue,
     expiresAt: data.expiresAt,
     refreshSeconds: data.refreshSeconds,
+    mode: data.mode === "static" ? "static" : "rotating",
   };
 }
 
@@ -43,17 +44,18 @@ export function QrDisplay({
 }) {
   const [state, setState] = useState<QrState>({ status: "loading" });
   const [tick, setTick] = useState(Date.now());
+  const [keepSameQr, setKeepSameQr] = useState(false);
 
   useEffect(() => {
     let active = true;
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const load = async () => {
-      const next = await fetchQrState(sessionId);
+      const next = await fetchQrState(sessionId, keepSameQr ? "static" : "rotating");
       if (!active) return;
       setState(next);
 
-      if (next.status === "ready") {
+      if (next.status === "ready" && next.mode !== "static") {
         if (interval) clearInterval(interval);
         interval = setInterval(() => {
           setTick(Date.now());
@@ -62,26 +64,28 @@ export function QrDisplay({
     };
 
     void load();
-    const refresh = setInterval(load, 30000);
+    const refresh = keepSameQr ? null : setInterval(load, 30000);
 
     return () => {
       active = false;
-      clearInterval(refresh);
+      if (refresh) clearInterval(refresh);
       if (interval) clearInterval(interval);
     };
-  }, [sessionId]);
+  }, [keepSameQr, sessionId]);
 
   const secondsRemaining = useMemo(() => {
     if (state.status !== "ready") return 0;
+    if (state.expiresAt === null) return 0;
     return Math.max(0, Math.ceil((state.expiresAt - tick) / 1000));
   }, [state, tick]);
 
   useEffect(() => {
     if (state.status !== "ready") return;
+    if (state.mode === "static") return;
     if (secondsRemaining <= 1) {
       void (async () => {
         setState({ status: "loading" });
-        setState(await fetchQrState(sessionId));
+        setState(await fetchQrState(sessionId, "rotating"));
       })();
     }
   }, [secondsRemaining, sessionId, state]);
@@ -103,6 +107,21 @@ export function QrDisplay({
       </section>
 
       <section className="surface-card rounded-[34px] p-5 sm:p-8">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/60 px-4 py-2 text-[12px] font-medium text-foreground">
+            <input
+              type="checkbox"
+              checked={keepSameQr}
+              onChange={(event) => setKeepSameQr(event.target.checked)}
+              className="h-4 w-4 rounded border-border"
+            />
+            Keep same QR code for printing
+          </label>
+          <Button variant="secondary" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            Print QR
+          </Button>
+        </div>
         <AnimatePresence mode="wait">
           {state.status === "loading" ? (
             <motion.div
@@ -125,7 +144,7 @@ export function QrDisplay({
             >
               <p className="text-base font-semibold text-foreground">Couldn&apos;t load the QR code</p>
               <p className="text-sm text-muted-foreground">{state.message}</p>
-              <Button onClick={async () => setState(await fetchQrState(sessionId))}>Try again</Button>
+              <Button onClick={async () => setState(await fetchQrState(sessionId, keepSameQr ? "static" : "rotating"))}>Try again</Button>
             </motion.div>
           ) : (
             <motion.div
@@ -148,10 +167,12 @@ export function QrDisplay({
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/70 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
                   <Clock3 className="h-3.5 w-3.5" />
-                  Refreshes in {secondsRemaining}s
+                  {state.mode === "static" ? "Static QR code" : `Refreshes in ${secondsRemaining}s`}
                 </div>
                 <p className="max-w-md text-sm leading-6 text-muted-foreground">
-                  This code refreshes automatically to protect attendance integrity and reduce screenshot reuse.
+                  {state.mode === "static"
+                    ? "This fixed QR code is easier to print and leave in the room, while still using a signed HawkLife session payload."
+                    : "This code refreshes automatically to protect attendance integrity and reduce screenshot reuse."}
                 </p>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--primary)/0.08)] px-3 py-1.5 text-[12px] font-medium text-[hsl(var(--primary))]">
                   <ShieldCheck className="h-3.5 w-3.5" />

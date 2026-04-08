@@ -16,6 +16,7 @@ type QrPayload = {
   sessionId: string;
   timestamp: number;
   validationToken: string;
+  mode?: "rotating" | "static";
 };
 
 export function getFlexBlockWindow(baseDate = new Date()) {
@@ -83,6 +84,16 @@ export function getSessionAccent(type: AttendanceSessionType) {
   }
 }
 
+export function canParticipateInFlex(user: {
+  role?: UserRole | null;
+  graduationYear?: number | null;
+}) {
+  if (user.role === "STUDENT" || user.role === "STUDENT_LEADER") return true;
+
+  // Some users hold admin/faculty permissions but still need to participate as students.
+  return typeof user.graduationYear === "number" && Number.isFinite(user.graduationYear);
+}
+
 function getSigningKey() {
   return getServerSecret("NEXTAUTH_SECRET", "hawklife-flex-dev-secret");
 }
@@ -93,11 +104,29 @@ function signSessionPayload(sessionId: string, timestamp: number, qrCode: string
     .digest("base64url");
 }
 
+function signStaticSessionPayload(sessionId: string, qrCode: string) {
+  return createHmac("sha256", getSigningKey())
+    .update(`${sessionId}.static.${qrCode}`)
+    .digest("base64url");
+}
+
 export function createQrValue(session: Pick<AttendanceSession, "id" | "qrCode" | "qrRefreshSeconds">, now = Date.now()) {
   const payload: QrPayload = {
     sessionId: session.id,
     timestamp: now,
     validationToken: signSessionPayload(session.id, now, session.qrCode),
+    mode: "rotating",
+  };
+
+  return Buffer.from(JSON.stringify(payload)).toString("base64url");
+}
+
+export function createStaticQrValue(session: Pick<AttendanceSession, "id" | "qrCode">) {
+  const payload: QrPayload = {
+    sessionId: session.id,
+    timestamp: 0,
+    validationToken: signStaticSessionPayload(session.id, session.qrCode),
+    mode: "static",
   };
 
   return Buffer.from(JSON.stringify(payload)).toString("base64url");
@@ -133,19 +162,27 @@ export function validateQrValue(
   }
 
   const expected = signSessionPayload(session.id, payload.timestamp, session.qrCode);
-  const expectedBuffer = Buffer.from(expected);
+  const expectedBuffer = Buffer.from(
+    payload.mode === "static"
+      ? signStaticSessionPayload(session.id, session.qrCode)
+      : expected
+  );
   const receivedBuffer = Buffer.from(payload.validationToken);
 
   if (expectedBuffer.length !== receivedBuffer.length || !timingSafeEqual(expectedBuffer, receivedBuffer)) {
     return { valid: false as const, error: "That QR code signature is invalid." };
   }
 
-  const expiresAt = payload.timestamp + session.qrRefreshSeconds * 1000;
-  if (Date.now() > expiresAt + 5000) {
-    return { valid: false as const, error: "That QR code has expired. Please refresh and try again." };
+  if (payload.mode !== "static") {
+    const expiresAt = payload.timestamp + session.qrRefreshSeconds * 1000;
+    if (Date.now() > expiresAt + 5000) {
+      return { valid: false as const, error: "That QR code has expired. Please refresh and try again." };
+    }
+
+    return { valid: true as const, payload, expiresAt };
   }
 
-  return { valid: true as const, payload, expiresAt };
+  return { valid: true as const, payload, expiresAt: null };
 }
 
 export async function canManageClubAttendanceSession(

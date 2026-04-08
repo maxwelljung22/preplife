@@ -5,6 +5,7 @@ import type { AttendanceSessionType, AttendanceStatus } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  canParticipateInFlex,
   canManageClubAttendanceSession,
   createQrValue,
   getFlexBlockWindow,
@@ -18,6 +19,8 @@ type CreateSessionInput = {
   clubId?: string;
   location: string;
   capacity: number;
+  recurringWeekdays?: number[];
+  recurrenceWeeks?: number;
 };
 
 const FACULTY_ALLOWED_MANUAL_STATUSES: AttendanceStatus[] = ["PRESENT", "LATE", "ABSENT"];
@@ -30,6 +33,27 @@ async function requireUser() {
 
 function normalizeTitle(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function buildRecurringFlexDates(weekdays: number[], weeks: number) {
+  const today = new Date();
+  const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const validWeekdays = Array.from(new Set(weekdays.filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)));
+  const horizonDays = Math.max(1, Math.min(12, weeks)) * 7;
+
+  if (validWeekdays.length === 0) {
+    return [getFlexBlockWindow(dayStart).date];
+  }
+
+  const dates: Date[] = [];
+  for (let offset = 0; offset < horizonDays; offset += 1) {
+    const nextDate = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate() + offset);
+    if (validWeekdays.includes(nextDate.getDay())) {
+      dates.push(getFlexBlockWindow(nextDate).date);
+    }
+  }
+
+  return dates.length > 0 ? dates : [getFlexBlockWindow(dayStart).date];
 }
 
 export async function joinFlexSession(sessionId: string) {
@@ -146,11 +170,10 @@ export async function createFlexSession(input: CreateSessionInput) {
 
   if (!location) return { error: "Add a location for the session." };
 
-  const { date, startTime, endTime } = getFlexBlockWindow();
-
   let title = normalizeTitle(input.title);
   let hostName = user.name || "HawkLife Faculty";
   let clubId: string | null = null;
+  const targetDates = buildRecurringFlexDates(input.recurringWeekdays ?? [], input.recurrenceWeeks ?? 1);
 
   if (type === "CLUB") {
     if (!input.clubId) return { error: "Choose a club for club sessions." };
@@ -165,50 +188,61 @@ export async function createFlexSession(input: CreateSessionInput) {
     if (!title) title = club.name;
     hostName = club.name;
 
-    const existingClubSession = await prisma.attendanceSession.findFirst({
+    const existingClubSessions = await prisma.attendanceSession.findMany({
       where: {
         clubId: club.id,
-        date,
+        date: { in: targetDates },
       },
-      select: { id: true },
+      select: { date: true },
     });
 
-    if (existingClubSession) {
-      return { error: "A flex session for this club already exists today." };
+    const existingDateKeys = new Set(existingClubSessions.map((session) => session.date.toISOString()));
+    const availableDates = targetDates.filter((targetDate) => !existingDateKeys.has(targetDate.toISOString()));
+    if (availableDates.length === 0) {
+      return { error: "A flex session for this club already exists for the selected flex dates." };
     }
+    targetDates.length = 0;
+    targetDates.push(...availableDates);
   }
 
   if (!title) return { error: "Add a session title." };
 
-  const session = await prisma.attendanceSession.create({
-    data: {
-      title,
-      type,
-      clubId,
-      createdById: user.id,
-      hostName,
-      location,
-      capacity,
-      date,
-      startTime,
-      endTime,
-      isOpen: true,
-    },
-    include: {
-      club: {
-        select: { id: true, name: true, slug: true },
+  const createdSessions = [];
+  for (const targetDate of targetDates) {
+    const { date, startTime, endTime } = getFlexBlockWindow(targetDate);
+    const session = await prisma.attendanceSession.create({
+      data: {
+        title,
+        type,
+        clubId,
+        createdById: user.id,
+        hostName,
+        location,
+        capacity,
+        date,
+        startTime,
+        endTime,
+        isOpen: true,
       },
-      records: {
-        select: { id: true },
+      include: {
+        club: {
+          select: { id: true, name: true, slug: true },
+        },
+        records: {
+          select: { id: true },
+        },
       },
-    },
-  });
+    });
+    createdSessions.push(session);
+  }
+
+  const session = createdSessions[0];
 
   revalidatePath("/flex");
   revalidatePath("/faculty/create-session");
   if (clubId) revalidatePath(`/club/${clubId}/attendance`);
 
-  return { success: true, session };
+  return { success: true, session, createdCount: createdSessions.length };
 }
 
 export async function deleteFlexSession(sessionId: string) {
@@ -426,10 +460,20 @@ export async function markFlexAttendanceManually(
       id: true,
       title: true,
       isOpen: true,
+      clubId: true,
+      createdById: true,
     },
   });
 
   if (!session) return { error: "Session not found." };
+
+  const canManage = session.clubId
+    ? await canManageClubAttendanceSession(session.clubId, user.id, user.role)
+    : canAccessFacultyTools(user.role) || session.createdById === user.id;
+
+  if (!canManage) {
+    return { error: "You don't have permission to update attendance for that session." };
+  }
 
   const targetUserIds = Array.isArray(userIds) ? Array.from(new Set(userIds)) : [userIds];
   if (targetUserIds.length === 0) return { error: "Select at least one student first." };
@@ -490,6 +534,95 @@ export async function markFlexAttendanceManually(
     title: session.title,
     status,
     studentName: targetUsers[0]?.name || targetUsers[0]?.email || "Student",
+    updatedCount: records.length,
+  };
+}
+
+export async function addStudentsToFlexSession(sessionId: string, userIds: string | string[]) {
+  const user = await requireUser();
+  if (!user) return { error: "You need to sign in first." };
+  if (user.role !== "ADMIN") {
+    return { error: "Only admins can bulk add students to a flex session." };
+  }
+
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId },
+    select: {
+      id: true,
+      title: true,
+      clubId: true,
+      createdById: true,
+    },
+  });
+
+  if (!session) return { error: "Session not found." };
+
+  const canManage = session.clubId
+    ? await canManageClubAttendanceSession(session.clubId, user.id, user.role)
+    : canAccessFacultyTools(user.role) || session.createdById === user.id;
+
+  if (!canManage) {
+    return { error: "You don't have permission to add students to that session." };
+  }
+
+  const targetUserIds = Array.isArray(userIds) ? Array.from(new Set(userIds)) : [userIds];
+  if (targetUserIds.length === 0) return { error: "Select at least one student first." };
+
+  const targetUsers = await prisma.user.findMany({
+    where: {
+      id: { in: targetUserIds },
+    },
+    select: { id: true, name: true, email: true, role: true, graduationYear: true },
+  });
+
+  const eligibleUsers = targetUsers.filter(canParticipateInFlex);
+
+  if (eligibleUsers.length === 0) return { error: "No eligible flex participants were selected." };
+
+  const now = new Date();
+  const records = [];
+
+  for (const targetUser of eligibleUsers) {
+    const record = await prisma.attendanceRecord.upsert({
+      where: {
+        sessionId_userId: {
+          sessionId,
+          userId: targetUser.id,
+        },
+      },
+      update: {},
+      create: {
+        sessionId,
+        userId: targetUser.id,
+        status: "JOINED",
+        present: false,
+        joinedAt: now,
+        checkIn: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            grade: true,
+          },
+        },
+      },
+    });
+    records.push(record);
+  }
+
+  revalidatePath("/flex");
+  revalidatePath("/dashboard");
+  revalidatePath("/faculty/create-session");
+
+  return {
+    success: true,
+    record: records[0],
+    records,
+    title: session.title,
+    studentName: eligibleUsers[0]?.name || eligibleUsers[0]?.email || "Student",
     updatedCount: records.length,
   };
 }

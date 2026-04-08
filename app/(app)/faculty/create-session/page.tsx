@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canAccessAdmin, canAccessFacultyTools } from "@/lib/roles";
 import { FacultySessionManager } from "@/components/attendance/faculty-session-manager";
 import { AttendanceSetupNotice } from "@/components/attendance/attendance-setup-notice";
-import { getFlexBlockWindow } from "@/lib/flex-attendance";
+import { canParticipateInFlex, getFlexBlockWindow } from "@/lib/flex-attendance";
 import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 
 export const metadata = { title: "Create Session" };
@@ -42,28 +42,32 @@ export default async function FacultyCreateSessionPage() {
         },
       }),
       prisma.user.findMany({
-        where: {
-          role: {
-            in: ["STUDENT", "STUDENT_LEADER"],
-          },
-        },
         orderBy: [{ name: "asc" }, { email: "asc" }],
         select: {
           id: true,
           name: true,
           email: true,
+          role: true,
           grade: true,
           graduationYear: true,
         },
       }),
       prisma.attendanceSession.findMany({
         where: isAdmin
-          ? { date }
+          ? {
+              date: {
+                gte: new Date(date.getFullYear(), date.getMonth(), date.getDate() - 60),
+                lt: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 60),
+              },
+            }
           : {
-              date,
-              OR: [{ clubId: null }, { clubId: { in: advisedClubIds } }],
+              date: {
+                gte: new Date(date.getFullYear(), date.getMonth(), date.getDate() - 60),
+                lt: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 60),
+              },
+              OR: [{ clubId: null, createdById: session.user.id }, { clubId: { in: advisedClubIds } }],
             },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
         select: {
           id: true,
           title: true,
@@ -73,6 +77,7 @@ export default async function FacultyCreateSessionPage() {
           capacity: true,
           hostName: true,
           isOpen: true,
+          date: true,
           records: {
             orderBy: [{ checkIn: "desc" }, { joinedAt: "desc" }],
             select: {
@@ -104,7 +109,7 @@ export default async function FacultyCreateSessionPage() {
     return (
       <FacultySessionManager
         clubs={clubs}
-        students={students}
+        students={students.filter(canParticipateInFlex)}
         currentRole={session.user.role}
         sessions={sessions.map((item) => ({
           id: item.id,
@@ -116,6 +121,7 @@ export default async function FacultyCreateSessionPage() {
           attendeeCount: item._count.records,
           hostName: item.hostName,
           isOpen: item.isOpen,
+          date: item.date.toISOString(),
           attendees: item.records.map((record) => ({
             id: record.id,
             status: record.status,

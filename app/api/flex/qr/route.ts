@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessFacultyTools } from "@/lib/roles";
-import { canManageClubAttendanceSession, createQrValue } from "@/lib/flex-attendance";
+import { canManageClubAttendanceSession, createQrValue, createStaticQrValue } from "@/lib/flex-attendance";
 import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 import {
   checkRateLimit,
   getRequestIp,
-  sanitizeAttachmentFilename,
   withStandardApiHeaders,
   withRateLimitHeaders,
 } from "@/lib/security";
@@ -20,6 +19,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
+  const mode = searchParams.get("mode");
   if (!sessionId) {
     return withStandardApiHeaders(NextResponse.json({ error: "Missing session id" }, { status: 400 }));
   }
@@ -83,15 +83,17 @@ export async function GET(request: Request) {
     );
   }
 
-  const qrValue = createQrValue(attendanceSession);
+  const staticMode = mode === "static";
+  const qrValue = staticMode ? createStaticQrValue(attendanceSession) : createQrValue(attendanceSession);
 
   return withStandardApiHeaders(
     withRateLimitHeaders(
       NextResponse.json({
         qrValue,
-        expiresAt: Date.now() + attendanceSession.qrRefreshSeconds * 1000,
+        expiresAt: staticMode ? null : Date.now() + attendanceSession.qrRefreshSeconds * 1000,
         title: attendanceSession.title,
-        refreshSeconds: attendanceSession.qrRefreshSeconds,
+        refreshSeconds: staticMode ? null : attendanceSession.qrRefreshSeconds,
+        mode: staticMode ? "static" : "rotating",
       }),
       rateLimit
     )

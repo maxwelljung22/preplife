@@ -10,7 +10,14 @@ import {
   withStandardApiHeaders,
   withRateLimitHeaders,
 } from "@/lib/security";
-import { buildAttendanceCsv, buildAttendancePdf, buildAttendanceRows } from "@/lib/attendance-export";
+import {
+  buildAbsentRows,
+  buildAttendanceCsv,
+  buildAttendancePdf,
+  buildMissingSignupRows,
+  buildRecordedAttendanceRows,
+} from "@/lib/attendance-export";
+import { canParticipateInFlex, getFlexBlockWindow } from "@/lib/flex-attendance";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -47,6 +54,7 @@ export async function GET(request: Request) {
       title: true,
       clubId: true,
       createdById: true,
+      date: true,
       records: {
         orderBy: [{ status: "asc" }, { user: { name: "asc" } }],
         include: {
@@ -78,7 +86,46 @@ export async function GET(request: Request) {
     );
   }
 
-  const rows = buildAttendanceRows(attendanceSession.records);
+  const { dayStart, dayEnd } = getFlexBlockWindow(attendanceSession.date);
+  const [students, dayRecords] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: [{ name: "asc" }, { email: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        grade: true,
+        graduationYear: true,
+      },
+    }),
+    prisma.attendanceRecord.findMany({
+      where: {
+        session: {
+          date: {
+            gte: dayStart,
+            lt: dayEnd,
+          },
+        },
+      },
+      select: {
+        userId: true,
+      },
+    }),
+  ]);
+
+  const signedUpUserIds = new Set(dayRecords.map((record) => record.userId));
+  const missingSignupStudents = students
+    .filter(canParticipateInFlex)
+    .filter((student) => !signedUpUserIds.has(student.id));
+  const absentRecords = attendanceSession.records.filter((record) =>
+    record.status === "ABSENT" || record.status === "ABSENT_EXCUSED"
+  );
+  const rows = [
+    ...buildRecordedAttendanceRows(attendanceSession.records),
+    ...buildMissingSignupRows(missingSignupStudents),
+    ...buildAbsentRows(absentRecords),
+  ];
   const filenameBase = sanitizeAttachmentFilename(attendanceSession.title, "attendance");
 
   if (format === "csv") {
