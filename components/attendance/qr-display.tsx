@@ -261,7 +261,7 @@ export function QrDisplay({
       <section class="card">
         <div class="top">
           <div class="brand">
-            <img src="${logoUrl}" alt="HawkLife logo" />
+            <img id="print-logo" src="${logoUrl}" alt="HawkLife logo" />
             <div>
               <div class="brand-mark">Hawk<span class="life">Life</span></div>
               <div class="brand-sub">St. Joseph's Preparatory School</div>
@@ -273,26 +273,60 @@ export function QrDisplay({
         </div>
         <div class="content">
           <div class="qr-shell">
-            <img src="${qrImageUrl}" alt="QR code for ${escapedTitle}" />
+            <img id="print-qr" src="${qrImageUrl}" alt="QR code for ${escapedTitle}" />
           </div>
           <p class="note">Students should open HawkLife, join the correct flex block, and then scan this code when they arrive.</p>
           <div class="footer">Live HawkLife Attendance</div>
         </div>
       </section>
     </main>
+    <script>
+      (function () {
+        const waitForImage = (img) => new Promise((resolve) => {
+          if (!img) {
+            resolve();
+            return;
+          }
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            resolve();
+          };
+          img.addEventListener("load", finish, { once: true });
+          img.addEventListener("error", finish, { once: true });
+          setTimeout(finish, 2000);
+        });
+
+        const printWhenReady = async () => {
+          const qr = document.getElementById("print-qr");
+          const logo = document.getElementById("print-logo");
+          await Promise.all([waitForImage(qr), waitForImage(logo)]);
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              window.focus();
+              window.print();
+              window.close();
+            });
+          });
+        };
+
+        if (document.readyState === "complete") {
+          void printWhenReady();
+        } else {
+          window.addEventListener("load", () => {
+            void printWhenReady();
+          }, { once: true });
+        }
+      })();
+    </script>
   </body>
 </html>`);
     printWindow.document.close();
-
-    const finalizePrint = () => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    };
-
-    printWindow.onload = () => {
-      setTimeout(finalizePrint, 250);
-    };
   };
 
   useEffect(() => {
