@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AttendanceStatus, AttendanceSessionType } from "@prisma/client";
-import { ArrowRight, Check, Clock3, MapPin, QrCode, Users } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock3, MapPin, QrCode, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { joinFlexSession } from "@/app/(app)/flex/actions";
@@ -33,10 +33,14 @@ const SECTION_COPY: Record<AttendanceSessionType, string> = {
 
 export function FlexBrowser({
   sessions,
+  selectedDate,
+  availableDates,
   joinedSessionId,
   joinedStatus,
 }: {
   sessions: FlexSessionCard[];
+  selectedDate: string;
+  availableDates: string[];
   joinedSessionId: string | null;
   joinedStatus: AttendanceStatus | null;
 }) {
@@ -44,6 +48,18 @@ export function FlexBrowser({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [optimisticSessionId, setOptimisticSessionId] = useOptimistic(joinedSessionId, (_previous, next: string | null) => next);
+  const selectedDateObject = useMemo(() => new Date(`${selectedDate}T12:00:00`), [selectedDate]);
+  const selectedDateLabel = useMemo(
+    () =>
+      selectedDateObject.toLocaleDateString([], {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }),
+    [selectedDateObject]
+  );
+  const todayDateValue = new Date().toISOString().slice(0, 10);
+  const canGoBack = selectedDate > todayDateValue;
 
   const groupedSessions = useMemo(() => {
     return SECTION_ORDER.map((type) => ({
@@ -55,6 +71,17 @@ export function FlexBrowser({
   }, [sessions]);
 
   const joinedSession = sessions.find((session) => session.id === optimisticSessionId) ?? null;
+  const quickDates = useMemo(() => {
+    const base = new Date();
+    return Array.from({ length: 7 }, (_, index) => {
+      const next = new Date(base.getFullYear(), base.getMonth(), base.getDate() + index);
+      return next.toISOString().slice(0, 10);
+    });
+  }, []);
+
+  const navigateToDate = (date: string) => {
+    router.push(`/flex?date=${date}`);
+  };
 
   const handleJoin = (sessionId: string) => {
     setOptimisticSessionId(sessionId);
@@ -97,15 +124,15 @@ export function FlexBrowser({
               Flex Block
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-[15px]">
-              Browse today&apos;s sessions, join the spot you want, and scan in when you arrive. One tap switches your
-              flex choice instantly.
+              Browse flex blocks by day, join the spot you want, and scan in when you arrive. One tap switches your
+              flex choice for the selected date instantly.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="surface-subtle rounded-[24px] px-4 py-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Time block</p>
-              <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-foreground">{FLEX_BLOCK_LABEL}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Selected day</p>
+              <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-foreground">{selectedDateLabel}</p>
             </div>
             <div className="surface-subtle rounded-[24px] px-4 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sessions</p>
@@ -116,6 +143,75 @@ export function FlexBrowser({
               <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-foreground">
                 {joinedStatus ? getAttendanceStatusLabel(joinedStatus) : "Not joined"}
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="surface-card rounded-[28px] p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Browse dates</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">See flex blocks beyond today</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Switch dates to preview upcoming flex options and join your choice before the day arrives.
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const previous = new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), selectedDateObject.getDate() - 1);
+                navigateToDate(previous.toISOString().slice(0, 10));
+              }}
+              disabled={!canGoBack}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous day
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const next = new Date(selectedDateObject.getFullYear(), selectedDateObject.getMonth(), selectedDateObject.getDate() + 1);
+                navigateToDate(next.toISOString().slice(0, 10));
+              }}
+            >
+              Next day
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <input
+            type="date"
+            min={todayDateValue}
+            value={selectedDate}
+            onChange={(event) => navigateToDate(event.target.value)}
+            className="h-12 rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-all duration-200 focus:border-[hsl(var(--ring))]"
+          />
+
+          <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full flex-nowrap gap-2">
+              {quickDates.map((date) => {
+                const label = new Date(`${date}T12:00:00`).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+                const hasSessions = availableDates.includes(date);
+                return (
+                  <button
+                    key={date}
+                    type="button"
+                    onClick={() => navigateToDate(date)}
+                    className={cn(
+                      "rounded-full border px-3 py-2 text-[12px] font-medium transition-colors",
+                      selectedDate === date
+                        ? "border-[hsl(var(--primary)/0.35)] bg-[hsl(var(--primary)/0.08)] text-foreground"
+                        : "border-border bg-background text-muted-foreground"
+                    )}
+                  >
+                    {label}{hasSessions ? " · Open" : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -133,7 +229,7 @@ export function FlexBrowser({
               <div className="surface-card rounded-[28px] border-dashed p-8 text-center">
                 <p className="text-base font-semibold text-foreground">No {section.title.toLowerCase()} scheduled yet</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Faculty can open sessions for this block from the session creation tools.
+                  Faculty can open sessions for this date from the session creation tools.
                 </p>
               </div>
             ) : (
@@ -179,7 +275,7 @@ export function FlexBrowser({
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock3 className="h-4 w-4" />
-                            <span>{FLEX_BLOCK_LABEL}</span>
+                            <span>{selectedDateLabel} · {FLEX_BLOCK_LABEL}</span>
                           </div>
                         </div>
 
@@ -245,7 +341,7 @@ export function FlexBrowser({
                 </p>
                 <p className="mt-2 truncate text-lg font-semibold tracking-[-0.05em] text-foreground">{joinedSession.title}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Head to the room and scan the QR code when you arrive.
+                  Head to the room on {selectedDateLabel} and scan the QR code when you arrive.
                 </p>
               </div>
               <div className="flex gap-2">

@@ -19,6 +19,7 @@ type CreateSessionInput = {
   clubId?: string;
   location: string;
   capacity: number;
+  scheduledDate?: string;
   recurringWeekdays?: number[];
   recurrenceWeeks?: number;
 };
@@ -35,9 +36,15 @@ function normalizeTitle(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
-function buildRecurringFlexDates(weekdays: number[], weeks: number) {
-  const today = new Date();
-  const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+function parseScheduledDate(value?: string) {
+  if (!value) return null;
+  const parsed = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+function buildRecurringFlexDates(weekdays: number[], weeks: number, startDate = new Date()) {
+  const dayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const validWeekdays = Array.from(new Set(weekdays.filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)));
   const horizonDays = Math.max(1, Math.min(12, weeks)) * 7;
 
@@ -59,7 +66,7 @@ function buildRecurringFlexDates(weekdays: number[], weeks: number) {
 export async function joinFlexSession(sessionId: string) {
   const user = await requireUser();
   if (!user) return { error: "You need to sign in first." };
-  const { dayStart, dayEnd } = getFlexBlockWindow();
+  const todayWindow = getFlexBlockWindow();
 
   let result:
     | { success: true; sessionId: string; status: AttendanceStatus }
@@ -78,8 +85,13 @@ export async function joinFlexSession(sessionId: string) {
         },
       });
 
-      if (!session || session.date < dayStart || session.date >= dayEnd || !session.isOpen) {
+      if (!session || !session.isOpen) {
         return { error: "That session is not open right now." } as const;
+      }
+
+      const sessionWindow = getFlexBlockWindow(session.date);
+      if (sessionWindow.dayEnd <= todayWindow.dayStart) {
+        return { error: "That flex block has already passed." } as const;
       }
 
       const existingRecord = await tx.attendanceRecord.findFirst({
@@ -87,8 +99,8 @@ export async function joinFlexSession(sessionId: string) {
           userId: user.id,
           session: {
             date: {
-              gte: dayStart,
-              lt: dayEnd,
+              gte: sessionWindow.dayStart,
+              lt: sessionWindow.dayEnd,
             },
           },
         },
@@ -173,7 +185,13 @@ export async function createFlexSession(input: CreateSessionInput) {
   let title = normalizeTitle(input.title);
   let hostName = user.name || "HawkLife Faculty";
   let clubId: string | null = null;
-  const targetDates = buildRecurringFlexDates(input.recurringWeekdays ?? [], input.recurrenceWeeks ?? 1);
+  const baseDate = parseScheduledDate(input.scheduledDate) ?? getFlexBlockWindow().date;
+  const todayStart = getFlexBlockWindow().dayStart;
+  if (baseDate < todayStart) {
+    return { error: "Choose today or a future school day for this flex block." };
+  }
+
+  const targetDates = buildRecurringFlexDates(input.recurringWeekdays ?? [], input.recurrenceWeeks ?? 1, baseDate);
 
   if (type === "CLUB") {
     if (!input.clubId) return { error: "Choose a club for club sessions." };

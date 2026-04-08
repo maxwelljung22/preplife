@@ -9,14 +9,31 @@ import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
 export const metadata = { title: "Flex Block" };
 export const dynamic = "force-dynamic";
 
-export default async function FlexPage() {
+function parseSelectedDate(value?: string) {
+  if (!value) return getFlexBlockWindow().date;
+  const parsed = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return getFlexBlockWindow().date;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+export default async function FlexPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ date?: string }>;
+}) {
   const session = await getSession();
   if (!session?.user) redirect("/auth/signin");
 
-  const { dayStart, dayEnd } = getFlexBlockWindow();
+  const params = (await searchParams) ?? {};
+  const selectedDate = parseSelectedDate(params.date);
+  const selectedDateValue = selectedDate.toISOString().slice(0, 10);
+  const { dayStart, dayEnd } = getFlexBlockWindow(selectedDate);
+  const todayStart = getFlexBlockWindow().dayStart;
+  const browserStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate());
+  const browserEnd = new Date(browserStart.getFullYear(), browserStart.getMonth(), browserStart.getDate() + 21);
 
   try {
-    const [sessions, joinedRecord] = await Promise.all([
+    const [sessions, joinedRecord, availableDates] = await Promise.all([
       prisma.attendanceSession.findMany({
         where: {
           date: {
@@ -57,6 +74,19 @@ export default async function FlexPage() {
           status: true,
         },
       }),
+      prisma.attendanceSession.findMany({
+        where: {
+          date: {
+            gte: browserStart,
+            lt: browserEnd,
+          },
+          isOpen: true,
+        },
+        orderBy: { date: "asc" },
+        select: {
+          date: true,
+        },
+      }),
     ]);
 
     return (
@@ -71,6 +101,8 @@ export default async function FlexPage() {
           hostName: item.hostName,
           clubId: item.clubId,
         }))}
+        selectedDate={selectedDateValue}
+        availableDates={Array.from(new Set(availableDates.map((item) => item.date.toISOString().slice(0, 10))))}
         joinedSessionId={joinedRecord?.sessionId ?? null}
         joinedStatus={joinedRecord?.status ?? null}
       />

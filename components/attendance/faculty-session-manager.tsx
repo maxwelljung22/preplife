@@ -99,6 +99,7 @@ export function FacultySessionManager({
     clubId: "",
     location: "",
     capacity: "24",
+    scheduledDate: new Date().toISOString().slice(0, 10),
     recurrenceEnabled: false,
     recurrenceWeeks: "6",
     recurrenceDays: [new Date().getDay()] as number[],
@@ -180,6 +181,7 @@ export function FacultySessionManager({
         clubId: form.type === "CLUB" ? form.clubId : undefined,
         location: form.location || selectedClub?.meetingRoom || "",
         capacity: Number(form.capacity),
+        scheduledDate: form.scheduledDate,
         recurringWeekdays: form.recurrenceEnabled ? form.recurrenceDays : [],
         recurrenceWeeks: Number(form.recurrenceWeeks),
       });
@@ -205,6 +207,7 @@ export function FacultySessionManager({
         clubId: "",
         location: "",
         capacity: "24",
+        scheduledDate: new Date().toISOString().slice(0, 10),
         recurrenceEnabled: false,
         recurrenceWeeks: "6",
         recurrenceDays: [new Date().getDay()],
@@ -522,6 +525,16 @@ export function FacultySessionManager({
                 />
               </label>
             </div>
+
+            <label className="space-y-2 text-sm font-medium text-foreground">
+              <span>Flex date</span>
+              <Input
+                type="date"
+                value={form.scheduledDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(event) => setForm((current) => ({ ...current, scheduledDate: event.target.value }))}
+              />
+            </label>
 
             {form.type === "CLUB" ? (
               <label className="space-y-2 text-sm font-medium text-foreground">
