@@ -324,7 +324,7 @@ export function QrDisplay({
 
       <section className="surface-card rounded-[34px] p-5 sm:p-8">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label className="inline-flex items-center gap-3 rounded-full border border-border bg-muted/60 px-4 py-2 text-[12px] font-medium text-foreground">
+          <label className="inline-flex w-full items-center gap-3 rounded-full border border-border bg-muted/60 px-4 py-2 text-[12px] font-medium text-foreground sm:w-auto">
             <input
               type="checkbox"
               checked={keepSameQr}
@@ -333,7 +333,7 @@ export function QrDisplay({
             />
             Keep same QR code for printing
           </label>
-          <Button variant="secondary" onClick={() => void printQrPoster()}>
+          <Button variant="secondary" className="w-full sm:w-auto" onClick={() => void printQrPoster()}>
             <Printer className="h-4 w-4" />
             Print QR
           </Button>
@@ -347,7 +347,7 @@ export function QrDisplay({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center gap-6"
             >
-              <div className="skeleton h-[280px] w-[280px] rounded-[32px]" />
+              <div className="skeleton aspect-square w-full max-w-[280px] rounded-[32px]" />
               <p className="text-sm text-muted-foreground">Refreshing the live attendance code…</p>
             </motion.div>
           ) : state.status === "error" ? (
@@ -371,12 +371,12 @@ export function QrDisplay({
               transition={{ duration: 0.18 }}
               className="flex flex-col items-center gap-6"
             >
-              <div className="rounded-[34px] border border-border bg-white p-5 shadow-[0_18px_46px_rgba(15,23,42,0.10)]">
+              <div className="w-full max-w-[360px] rounded-[34px] border border-border bg-white p-4 shadow-[0_18px_46px_rgba(15,23,42,0.10)] sm:p-5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={buildQrImageUrl(state.qrValue)}
                   alt={`QR code for ${title}`}
-                  className="h-[260px] w-[260px] rounded-[20px] object-cover sm:h-[320px] sm:w-[320px]"
+                  className="aspect-square w-full rounded-[20px] object-cover"
                 />
               </div>
 

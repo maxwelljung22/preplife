@@ -214,7 +214,7 @@ export function ClubEditorClient({ mode, initialValues }: ClubEditorClientProps)
               <p className="mt-2 text-[12px] leading-6 text-muted-foreground">
                 Choose the main weekday for this club. If the schedule rotates or changes, use the custom option and describe it clearly for students.
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-6">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
                 {MEETING_DAY_OPTIONS.map((day) => (
                   <button
                     key={day}

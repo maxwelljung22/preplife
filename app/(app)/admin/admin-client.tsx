@@ -79,13 +79,13 @@ export function AdminClient({ clubs, users, applications, changelog, nhsRecords,
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-px border-b border-border overflow-x-auto">
+      <div className="flex gap-px overflow-x-auto border-b border-border pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-[13px] font-[500] border-b-[2.5px] -mb-px whitespace-nowrap transition-all",
+              "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[2.5px] px-4 py-2.5 text-[13px] font-[500] transition-all -mb-px",
               tab === t.id ? "border-crimson text-crimson" : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
@@ -136,7 +136,7 @@ function OverviewTab({ clubs, users, applications, nhsRecords, analytics, change
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {[
           { icon: Building2,   val: activeClubs,  label: "Active Clubs",      color: "text-crimson bg-crimson/8" },
           { icon: Users,       val: analytics.participatingStudents, label: "Student Participation", color: "text-navy bg-navy/8"       },
@@ -155,7 +155,7 @@ function OverviewTab({ clubs, users, applications, nhsRecords, analytics, change
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Top clubs by membership */}
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
           <p className="text-[13px] font-bold text-foreground mb-4">Club activity levels</p>
@@ -181,7 +181,7 @@ function OverviewTab({ clubs, users, applications, nhsRecords, analytics, change
         {/* Faculty controls stats */}
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
           <p className="text-[13px] font-bold text-foreground mb-4">Moderation & analytics</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-muted px-4 py-3">
               <p className="text-[11px] text-muted-foreground">Events tracked</p>
               <p className="mt-1 text-[20px] font-semibold text-foreground">{analytics.totalEvents}</p>
@@ -202,7 +202,7 @@ function OverviewTab({ clubs, users, applications, nhsRecords, analytics, change
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
           <div className="flex items-center gap-2">
             <BellDot className="h-4 w-4 text-crimson" />

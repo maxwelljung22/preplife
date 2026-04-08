@@ -886,7 +886,7 @@ export function FacultySessionManager({
                           </div>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                           {canUsePresign ? (
                             <Button variant="secondary" size="lg" onClick={() => handleBulkAdd()} disabled={isPending || effectiveSelectedIds.length === 0}>
                               <Plus className="h-4 w-4" />
@@ -918,7 +918,7 @@ export function FacultySessionManager({
                       </div>
 
                       <div className="rounded-[28px] border border-border bg-background p-4 sm:p-5">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recorded attendees</p>
                             <p className="mt-1 text-sm text-muted-foreground">Review the live roster, missing flex signups, and students marked absent.</p>
@@ -928,7 +928,7 @@ export function FacultySessionManager({
                           </div>
                         </div>
 
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                           <button
                             type="button"
                             onClick={() => setReportView("missing")}
@@ -1127,7 +1127,7 @@ export function FacultySessionManager({
                       setSelectedQrSessionId(session.id);
                       setReportView("recorded");
                     }}
-                    className="flex items-center justify-between rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50"
+                    className="flex flex-col items-start gap-3 rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{session.title}</p>
@@ -1166,7 +1166,7 @@ export function FacultySessionManager({
                       setSelectedQrSessionId(session.id);
                       setReportView("recorded");
                     }}
-                    className="flex items-center justify-between rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50"
+                    className="flex flex-col items-start gap-3 rounded-[24px] border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{session.title}</p>
@@ -1246,7 +1246,7 @@ export function FacultySessionManager({
                       type="button"
                       onClick={() => toggleAssignmentSession(session.id)}
                       className={cn(
-                        "flex w-full items-center justify-between rounded-[24px] border px-4 py-4 text-left transition-colors",
+                        "flex w-full flex-col items-start gap-3 rounded-[24px] border px-4 py-4 text-left transition-colors sm:flex-row sm:items-center sm:justify-between",
                         selected
                           ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)]"
                           : "border-border bg-background hover:bg-muted/50"
