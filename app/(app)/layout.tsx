@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { FirstRunIntroGate } from "@/components/intro/first-run-intro-gate";
 import { AppShell } from "@/components/layout/app-shell";
 import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
+import { canParticipateInFlex } from "@/lib/flex-attendance";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -82,7 +83,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <FirstRunIntroGate
       userId={session.user.id}
       shouldShowInitially={!introState?.hasSeenIntro}
-      shouldRequireAccountSetup={!accountSetupState?.graduationYear}
+      shouldRequireAccountSetup={canParticipateInFlex({ role: session.user.role, graduationYear: accountSetupState?.graduationYear ?? null }) && !accountSetupState?.graduationYear}
     >
       <AppShell user={session.user} notifications={notifications} unreadNotifications={unreadNotifications}>
         {children}
