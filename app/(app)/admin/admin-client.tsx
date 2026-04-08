@@ -704,6 +704,7 @@ function UsersTab({ users, clubs, canManageUsers }: { users: any[]; clubs: any[]
                 >
                   <option value="STUDENT">student</option>
                   <option value="FACULTY">faculty</option>
+                  <option value="MISSION_MINISTRY">mission & ministry</option>
                   <option value="ADMIN">admin</option>
                 </select>
               </div>
@@ -798,6 +799,7 @@ function UsersTab({ users, clubs, canManageUsers }: { users: any[]; clubs: any[]
                 >
                   <option value="STUDENT">student</option>
                   <option value="FACULTY">faculty</option>
+                  <option value="MISSION_MINISTRY">mission & ministry</option>
                   <option value="ADMIN">admin</option>
                 </select>
               </td>

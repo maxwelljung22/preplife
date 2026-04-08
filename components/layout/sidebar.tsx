@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   House, Compass, CalendarDays, Megaphone,
-  Vote, FileStack, ShieldCheck, GraduationCap, LogOut, Rocket, X, ScanLine, PlusSquare, Info,
+  Vote, FileStack, ShieldCheck, GraduationCap, LogOut, Rocket, X, ScanLine, PlusSquare, Info, Heart,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn, initials } from "@/lib/utils";
@@ -49,6 +49,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "School",
     items: [
       { label: "New Charter", href: "/charter/apply", icon: <Rocket className="h-4 w-4" /> },
+      { label: "Mission & Ministry", href: "/mission-ministry", icon: <Heart className="h-4 w-4" /> },
       { label: "NHS Hours", href: "/nhs", icon: <GraduationCap className="h-4 w-4" /> },
       { label: "About HawkLife", href: "/about", icon: <Info className="h-4 w-4" /> },
     ],

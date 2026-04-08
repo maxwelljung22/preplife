@@ -21,6 +21,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/voting":        "Polls & Elections",
   "/applications":  "Applications",
   "/charter/apply": "New Charter",
+  "/mission-ministry": "Mission & Ministry",
   "/nhs":           "NHS Hours",
   "/admin":         "Admin Panel",
   "/admin/charters": "Charter Reviews",

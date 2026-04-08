@@ -11,7 +11,7 @@ export function getDefaultRoleForEmail(email: string): UserRole | null {
 }
 
 export function resolveRoleForUser(email: string, currentRole?: UserRole | null): UserRole | null {
-  if (currentRole === "ADMIN") return currentRole;
+  if (currentRole === "ADMIN" || currentRole === "MISSION_MINISTRY") return currentRole;
   return getDefaultRoleForEmail(email);
 }
 
@@ -20,11 +20,15 @@ export function canAccessAdmin(role?: UserRole | null) {
 }
 
 export function canAccessOversight(role?: UserRole | null) {
-  return role === "ADMIN" || role === "FACULTY";
+  return role === "ADMIN" || role === "FACULTY" || role === "MISSION_MINISTRY";
 }
 
 export function canAccessFacultyTools(role?: UserRole | null) {
-  return role === "ADMIN" || role === "FACULTY";
+  return role === "ADMIN" || role === "FACULTY" || role === "MISSION_MINISTRY";
+}
+
+export function canAccessMissionMinistry(role?: UserRole | null) {
+  return role === "ADMIN" || role === "MISSION_MINISTRY";
 }
 
 export function canManageClubMembershipRole(role?: MembershipRole | null) {
@@ -87,6 +91,8 @@ export function getRoleLabel(role?: UserRole | null) {
       return "Admin";
     case "FACULTY":
       return "Faculty";
+    case "MISSION_MINISTRY":
+      return "Mission & Ministry";
     case "STUDENT_LEADER":
       return "Student Leader";
     case "STUDENT":
@@ -102,6 +108,8 @@ export function getRoleBadgeClass(role?: UserRole | null) {
       return "bg-[rgba(139,26,26,.10)] text-[rgb(139,26,26)]";
     case "FACULTY":
       return "bg-[rgba(23,80,122,.10)] text-[rgb(23,80,122)] dark:bg-[rgba(116,196,255,.12)] dark:text-[rgb(161,220,255)]";
+    case "MISSION_MINISTRY":
+      return "bg-[rgba(162,89,18,.12)] text-[rgb(126,66,9)] dark:bg-[rgba(251,191,36,.14)] dark:text-[rgb(253,224,71)]";
     case "STUDENT_LEADER":
       return "bg-[rgba(181,129,45,.12)] text-[rgb(138,92,19)] dark:bg-[rgba(218,173,74,.16)] dark:text-[rgb(241,208,127)]";
     default:

@@ -13,6 +13,7 @@ enum UserRole {
   STUDENT
   STUDENT_LEADER
   FACULTY
+  MISSION_MINISTRY
   ADMIN
 }
 
@@ -106,6 +107,12 @@ enum AttendanceStatus {
   LATE_EXCUSED
 }
 
+enum MinistryProgramType {
+  SERVICE_OPPORTUNITY
+  KAIROS
+  RETREAT
+}
+
 enum WorkspaceTaskStatus {
   TODO
   IN_PROGRESS
@@ -179,6 +186,8 @@ model User {
   resources         Resource[]
   attendanceRecords AttendanceRecord[]
   flexSelectionGroups FlexSelectionGroup[]
+  ministryProgramsCreated MinistryProgram[] @relation("MinistryProgramCreator")
+  ministrySignups MinistrySignup[]
   charterApplications CharterApplication[]
   workspacePosts       WorkspacePost[]
   workspaceComments    WorkspaceComment[]
@@ -634,6 +643,47 @@ model FlexSelectionGroup {
   owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([ownerId, createdAt])
+}
+
+model MinistryProgram {
+  id                   String             @id @default(cuid())
+  title                String
+  summary              String
+  description          String             @db.Text
+  type                 MinistryProgramType
+  location             String
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime?
+  capacity             Int?
+  isFeatured           Boolean            @default(false)
+  registrationOpen     Boolean            @default(true)
+  colorFrom            String             @default("#8B1A1A")
+  colorTo              String             @default("#D97706")
+  imageUrl             String?
+  createdById          String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  createdBy User             @relation("MinistryProgramCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  signups   MinistrySignup[]
+
+  @@index([type, startDate])
+  @@index([registrationOpen, startDate])
+  @@index([createdById, createdAt])
+}
+
+model MinistrySignup {
+  id        String   @id @default(cuid())
+  programId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  program MinistryProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, userId])
+  @@index([userId, createdAt])
 }
 
 // ─── NHS CACHE ────────────────────────────────────────────────────────────────

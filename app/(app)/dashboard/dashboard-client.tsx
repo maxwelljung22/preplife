@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { format } from "date-fns";
-import { ArrowUpRight, CalendarDays, Compass, Megaphone, Sparkles, Vote } from "lucide-react";
+import { ArrowUpRight, CalendarDays, Compass, Heart, Megaphone, Sparkles, Vote } from "lucide-react";
 import type { NhsRecord } from "@/lib/airtable";
 import { canAccessFacultyTools } from "@/lib/roles";
 import { cn, formatRelativeTime } from "@/lib/utils";
@@ -51,6 +51,7 @@ export function DashboardClient({
   const quickActions = [
     { href: "/clubs", label: "Explore clubs", icon: Compass, note: "Find your place at The Prep" },
     { href: "/calendar", label: "Open calendar", icon: CalendarDays, note: "See what is happening next" },
+    { href: "/mission-ministry", label: "Mission & Ministry", icon: Heart, note: "Browse service, Kairos, and retreat opportunities" },
     { href: "/announcements", label: "View updates", icon: Megaphone, note: "Catch the latest school news" },
   ];
   const managementActions = canAccessFacultyTools(user.role)
