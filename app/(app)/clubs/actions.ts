@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { canAccessAdmin } from "@/lib/roles";
+import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 import { normalizeHttpsUrl, normalizeMultilineText, normalizeSingleLineText, normalizeSlug, normalizeThemeColor } from "@/lib/sanitize";
 
 export async function joinClub(clubId: string) {
@@ -77,23 +78,34 @@ export async function createClub(data: {
   if (data.logoUrl && !logoUrl) return { error: "Use a valid https:// URL for the club logo." };
 
   try {
+    const normalizedName = normalizeSingleLineText(data.name, { maxLength: 80 });
+    const normalizedTagline = normalizeSingleLineText(data.tagline, { maxLength: 140 });
+    const normalizedDescription = normalizeMultilineText(data.description, { maxLength: 4000 });
+    const normalizedMeetingDay = normalizeSingleLineText(data.meetingDay, { maxLength: 40 });
+    const normalizedMeetingTime = normalizeSingleLineText(data.meetingTime, { maxLength: 40 });
+    const normalizedMeetingRoom = normalizeSingleLineText(data.meetingRoom, { maxLength: 80 });
+
+    if (!normalizedName || !normalizedDescription) {
+      return { error: "Add a club name and description first." };
+    }
+
     const club = await prisma.club.create({
       data: {
         slug,
-        logoUrl,
-        name: normalizeSingleLineText(data.name, { maxLength: 80 }),
+        name: normalizedName,
         emoji: data.emoji,
-        tagline: normalizeSingleLineText(data.tagline, { maxLength: 140 }),
-        description: normalizeMultilineText(data.description, { maxLength: 4000 }),
+        description: normalizedDescription,
         category: data.category as any,
         commitment: data.commitment as any,
-        meetingDay: normalizeSingleLineText(data.meetingDay, { maxLength: 40 }),
-        meetingTime: normalizeSingleLineText(data.meetingTime, { maxLength: 40 }),
-        meetingRoom: normalizeSingleLineText(data.meetingRoom, { maxLength: 80 }),
         requiresApp: data.requiresApp,
         tags: data.tags,
         gradientFrom,
         gradientTo,
+        ...(logoUrl ? { logoUrl } : {}),
+        ...(normalizedTagline ? { tagline: normalizedTagline } : {}),
+        ...(normalizedMeetingDay ? { meetingDay: normalizedMeetingDay } : {}),
+        ...(normalizedMeetingTime ? { meetingTime: normalizedMeetingTime } : {}),
+        ...(normalizedMeetingRoom ? { meetingRoom: normalizedMeetingRoom } : {}),
       },
     });
 
@@ -101,9 +113,12 @@ export async function createClub(data: {
     revalidatePath("/admin/clubs");
     return { success: true, slug: club.slug };
   } catch (err: any) {
-    if (err.code === "P2002") return { error: "A club with this name already exists" };
+    if (err.code === "P2002") return { error: "That club name or URL slug is already in use." };
+    if (isPrismaSchemaMismatchError(err)) {
+      return { error: "The club database schema is out of date. Apply the latest Prisma migrations, then try again." };
+    }
     console.error("[createClub]", err);
-    return { error: "Failed to create club" };
+    return { error: err?.message || "Failed to create club" };
   }
 }
 
@@ -161,8 +176,12 @@ export async function updateClub(clubId: string, data: Partial<{
     revalidatePath("/admin/clubs");
     revalidatePath(`/clubs/${club.slug}`);
     return { success: true, slug: club.slug };
-  } catch (err) {
-    return { error: "Failed to update club" };
+  } catch (err: any) {
+    if (err.code === "P2002") return { error: "That club name or URL slug is already in use." };
+    if (isPrismaSchemaMismatchError(err)) {
+      return { error: "The club database schema is out of date. Apply the latest Prisma migrations, then try again." };
+    }
+    return { error: err?.message || "Failed to update club" };
   }
 }
 
