@@ -12,7 +12,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   addStudentsToFlexSession,
   addStudentsToMultipleFlexSessions,
+  createFlexSelectionGroup,
   createFlexSession,
+  deleteFlexSelectionGroup,
   deleteFlexSession,
   markFlexAttendanceManually,
 } from "@/app/(app)/flex/actions";
@@ -58,6 +60,7 @@ export function FacultySessionManager({
   students,
   currentRole,
   sessions,
+  savedGroups,
 }: {
   clubs: ClubOption[];
   students: {
@@ -69,6 +72,12 @@ export function FacultySessionManager({
   }[];
   currentRole: UserRole;
   sessions: SessionItem[];
+  savedGroups: {
+    id: string;
+    name: string;
+    studentIds: string[];
+    updatedAt: Date;
+  }[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -81,6 +90,7 @@ export function FacultySessionManager({
   const [activeTab, setActiveTab] = useState<"create" | "attendance" | "assign">("create");
   const [reportView, setReportView] = useState<"recorded" | "missing" | "absent">("recorded");
   const [assignmentSessionIds, setAssignmentSessionIds] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
   const isAdmin = currentRole === "ADMIN";
   const canUsePresign = currentRole === "ADMIN" || currentRole === "FACULTY";
   const [form, setForm] = useState({
@@ -311,6 +321,61 @@ export function FacultySessionManager({
     setAssignmentSessionIds((current) =>
       current.includes(sessionId) ? current.filter((value) => value !== sessionId) : [...current, sessionId]
     );
+  };
+
+  const handleSaveGroup = () => {
+    if (effectiveSelectedIds.length === 0) {
+      toast({
+        title: "Select students first",
+        description: "Pick one or more students before saving a flex selection group.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await createFlexSelectionGroup(groupName, effectiveSelectedIds);
+      if ("error" in result) {
+        toast({
+          title: "Couldn't save group",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Saved flex group",
+        description: `${result.group.name} now has ${result.studentCount} students.`,
+      });
+      setGroupName("");
+      router.refresh();
+    });
+  };
+
+  const applySavedGroup = (studentIds: string[]) => {
+    setBulkStudentIds(Array.from(new Set(studentIds)));
+    setSelectedStudentId("");
+  };
+
+  const handleDeleteGroup = (groupId: string) => {
+    startTransition(async () => {
+      const result = await deleteFlexSelectionGroup(groupId);
+      if ("error" in result) {
+        toast({
+          title: "Couldn't remove group",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Group removed",
+        description: `${result.name} was removed from your saved flex groups.`,
+      });
+      router.refresh();
+    });
   };
 
   const handleRequireStudents = () => {
@@ -781,6 +846,44 @@ export function FacultySessionManager({
                             </button>
                           </div>
                           <p className="mt-2 text-[12px] text-muted-foreground">{effectiveSelectedIds.length} students ready for bulk actions</p>
+                        </div>
+
+                        <div className="mt-4 rounded-[24px] border border-border bg-background px-4 py-3">
+                          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saved teacher groups</p>
+                          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                            <Input
+                              value={groupName}
+                              onChange={(event) => setGroupName(event.target.value)}
+                              placeholder="e.g. Advisory A, Robotics Captains"
+                            />
+                            <Button variant="secondary" onClick={handleSaveGroup} disabled={isPending || effectiveSelectedIds.length === 0}>
+                              <Plus className="h-4 w-4" />
+                              Save group
+                            </Button>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {savedGroups.length === 0 ? (
+                              <p className="text-[12px] text-muted-foreground">No saved groups yet.</p>
+                            ) : savedGroups.map((group) => (
+                              <div key={group.id} className="flex items-center gap-2 rounded-full border border-border bg-muted px-2 py-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => applySavedGroup(group.studentIds)}
+                                  className="text-[12px] font-medium text-foreground"
+                                >
+                                  {group.name} · {group.studentIds.length}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGroup(group.id)}
+                                  className="text-muted-foreground transition-colors hover:text-foreground"
+                                  aria-label={`Delete ${group.name}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -1272,6 +1375,44 @@ export function FacultySessionManager({
               </button>
             </div>
             <p className="mt-2 text-[12px] text-muted-foreground">{effectiveSelectedIds.length} students ready to be required</p>
+          </div>
+
+          <div className="mt-4 rounded-[24px] border border-border bg-background px-4 py-3">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saved teacher groups</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={groupName}
+                onChange={(event) => setGroupName(event.target.value)}
+                placeholder="e.g. Friday advisory, NHS roster"
+              />
+              <Button variant="secondary" onClick={handleSaveGroup} disabled={isPending || effectiveSelectedIds.length === 0}>
+                <Plus className="h-4 w-4" />
+                Save group
+              </Button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {savedGroups.length === 0 ? (
+                <p className="text-[12px] text-muted-foreground">No saved groups yet.</p>
+              ) : savedGroups.map((group) => (
+                <div key={group.id} className="flex items-center gap-2 rounded-full border border-border bg-muted px-2 py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => applySavedGroup(group.studentIds)}
+                    className="text-[12px] font-medium text-foreground"
+                  >
+                    {group.name} · {group.studentIds.length}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteGroup(group.id)}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    aria-label={`Delete ${group.name}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-4 rounded-[24px] border border-border bg-muted/35 p-4 text-sm text-muted-foreground">

@@ -129,7 +129,7 @@ export function ClubsClient({ clubs: initialClubs, role }: Props) {
       </motion.section>
 
       <motion.section variants={fadeUp} className="rounded-[1.8rem] border border-border/80 bg-card/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:p-6">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,auto)] xl:items-end">
+        <div className="space-y-4">
           <div className="min-w-0">
             <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">Search</label>
             <div className="relative mt-2">
@@ -143,7 +143,7 @@ export function ClubsClient({ clubs: initialClubs, role }: Props) {
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-end">
+          <div className="grid gap-4 2xl:grid-cols-2">
             <ChipGroup label="Category" items={CATEGORIES} value={category} onChange={setCategory} />
             <ChipGroup label="Commitment" items={COMMITMENTS} value={commitment} onChange={setCommitment} />
           </div>
@@ -272,7 +272,8 @@ function ChipGroup({
   return (
     <div className="min-w-0 space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">{label}</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex w-max min-w-full flex-nowrap gap-2 pr-1">
         {items.map((item) => (
           <button
             key={item}
@@ -287,6 +288,7 @@ function ChipGroup({
             {item}
           </button>
         ))}
+        </div>
       </div>
     </div>
   );

@@ -721,3 +721,71 @@ export async function addStudentsToMultipleFlexSessions(sessionIds: string[], us
     studentName: eligibleUsers[0]?.name || eligibleUsers[0]?.email || "Student",
   };
 }
+
+export async function createFlexSelectionGroup(name: string, userIds: string | string[]) {
+  const user = await requireUser();
+  if (!user) return { error: "You need to sign in first." };
+  if (!canAccessFacultyTools(user.role)) {
+    return { error: "Only faculty and admins can create saved flex groups." };
+  }
+
+  const normalizedName = name.trim().replace(/\s+/g, " ");
+  if (!normalizedName) return { error: "Give this group a name first." };
+
+  const targetUserIds = Array.isArray(userIds) ? Array.from(new Set(userIds)) : [userIds];
+  if (targetUserIds.length === 0) return { error: "Select at least one student first." };
+
+  const targetUsers = await prisma.user.findMany({
+    where: {
+      id: { in: targetUserIds },
+    },
+    select: { id: true, role: true, graduationYear: true },
+  });
+
+  const eligibleUsers = targetUsers.filter(canParticipateInFlex);
+  if (eligibleUsers.length === 0) {
+    return { error: "No eligible flex participants were selected." };
+  }
+
+  const group = await prisma.flexSelectionGroup.create({
+    data: {
+      ownerId: user.id,
+      name: normalizedName,
+      studentIds: eligibleUsers.map((student) => student.id),
+    },
+  });
+
+  revalidatePath("/faculty/create-session");
+
+  return {
+    success: true,
+    group,
+    studentCount: eligibleUsers.length,
+  };
+}
+
+export async function deleteFlexSelectionGroup(groupId: string) {
+  const user = await requireUser();
+  if (!user) return { error: "You need to sign in first." };
+  if (!canAccessFacultyTools(user.role)) {
+    return { error: "Only faculty and admins can remove saved flex groups." };
+  }
+
+  const group = await prisma.flexSelectionGroup.findUnique({
+    where: { id: groupId },
+    select: { id: true, ownerId: true, name: true },
+  });
+
+  if (!group) return { error: "Saved group not found." };
+  if (group.ownerId !== user.id && user.role !== "ADMIN") {
+    return { error: "You can only remove groups that you created." };
+  }
+
+  await prisma.flexSelectionGroup.delete({
+    where: { id: groupId },
+  });
+
+  revalidatePath("/faculty/create-session");
+
+  return { success: true, name: group.name };
+}

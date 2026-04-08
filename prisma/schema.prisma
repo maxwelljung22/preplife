@@ -178,6 +178,7 @@ model User {
   notifications     Notification[]
   resources         Resource[]
   attendanceRecords AttendanceRecord[]
+  flexSelectionGroups FlexSelectionGroup[]
   charterApplications CharterApplication[]
   workspacePosts       WorkspacePost[]
   workspaceComments    WorkspaceComment[]
@@ -620,6 +621,19 @@ model AttendanceRecord {
 
   @@unique([sessionId, userId])
   @@index([userId, joinedAt])
+}
+
+model FlexSelectionGroup {
+  id         String   @id @default(cuid())
+  ownerId    String
+  name       String
+  studentIds String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, createdAt])
 }
 
 // ─── NHS CACHE ────────────────────────────────────────────────────────────────

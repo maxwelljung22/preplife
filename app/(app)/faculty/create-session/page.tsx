@@ -5,7 +5,7 @@ import { canAccessAdmin, canAccessFacultyTools } from "@/lib/roles";
 import { FacultySessionManager } from "@/components/attendance/faculty-session-manager";
 import { AttendanceSetupNotice } from "@/components/attendance/attendance-setup-notice";
 import { canParticipateInFlex, getFlexBlockWindow } from "@/lib/flex-attendance";
-import { isPrismaMissingColumnError } from "@/lib/prisma-errors";
+import { isPrismaMissingColumnError, isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 
 export const metadata = { title: "Create Session" };
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export default async function FacultyCreateSessionPage() {
     : [];
 
   try {
-    const [clubs, students, sessions] = await Promise.all([
+    const [clubs, students, sessions, savedGroups] = await Promise.all([
       prisma.club.findMany({
         where: isAdmin ? { isActive: true } : { isActive: true, id: { in: advisedClubIds } },
         orderBy: { name: "asc" },
@@ -104,12 +104,26 @@ export default async function FacultyCreateSessionPage() {
           },
         },
       }),
+      prisma.flexSelectionGroup.findMany({
+        where: { ownerId: session.user.id },
+        orderBy: [{ updatedAt: "desc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          studentIds: true,
+          updatedAt: true,
+        },
+      }).catch((error) => {
+        if (!isPrismaSchemaMismatchError(error)) throw error;
+        return [];
+      }),
     ]);
 
     return (
       <FacultySessionManager
         clubs={clubs}
         students={students.filter(canParticipateInFlex)}
+        savedGroups={savedGroups}
         currentRole={session.user.role}
         sessions={sessions.map((item) => ({
           id: item.id,
