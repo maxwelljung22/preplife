@@ -433,6 +433,172 @@ function ClubRatingCard({ club }: { club: any }) {
   );
 }
 
+function FlexReportsTab({ sessions, users }: { sessions: any[]; users: any[] }) {
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(sessions[0]?.id ?? "");
+  const selectedSession = sessions.find((session) => session.id === selectedSessionId) ?? sessions[0] ?? null;
+  const participantUsers = users.filter((user) =>
+    user.role === "STUDENT" || user.role === "STUDENT_LEADER" || typeof user.graduationYear === "number"
+  );
+
+  const missingSignupUsers = selectedSession
+    ? participantUsers.filter((user) => {
+        const dayKey = new Date(selectedSession.date).toDateString();
+        return !sessions.some((session) =>
+          new Date(session.date).toDateString() === dayKey &&
+          session.attendees.some((attendee: any) => attendee.user.id === user.id)
+        );
+      })
+    : [];
+
+  const absentAttendees = selectedSession
+    ? selectedSession.attendees.filter((attendee: any) => attendee.status === "ABSENT" || attendee.status === "ABSENT_EXCUSED")
+    : [];
+
+  const lateAttendees = selectedSession
+    ? selectedSession.attendees.filter((attendee: any) => attendee.status === "LATE" || attendee.status === "LATE_EXCUSED")
+    : [];
+
+  const exportAttendance = (format: "csv" | "pdf") => {
+    if (!selectedSession) return;
+    window.location.href = `/api/flex/export?sessionId=${selectedSession.id}&format=${format}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-5 xl:grid-cols-[0.86fr_1.14fr]">
+        <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-bold text-foreground">Flex attendance reports</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">Admin-only attendance analytics, absences, and missing signup review.</p>
+            </div>
+            <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold text-muted-foreground">{sessions.length} sessions</span>
+          </div>
+          <div className="mt-4 max-h-[34rem] space-y-3 overflow-y-auto pr-1">
+            {sessions.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[13px] text-muted-foreground">
+                No flex sessions available yet.
+              </div>
+            ) : sessions.map((session) => {
+              const active = selectedSession?.id === session.id;
+              return (
+                <button
+                  key={session.id}
+                  onClick={() => setSelectedSessionId(session.id)}
+                  className={cn(
+                    "w-full rounded-2xl border px-4 py-4 text-left transition-colors",
+                    active ? "border-crimson/30 bg-crimson/5" : "border-border bg-muted/20 hover:bg-muted/35"
+                  )}
+                >
+                  <p className="text-[14px] font-semibold text-foreground">{session.title}</p>
+                  <p className="mt-1 text-[12px] text-muted-foreground">
+                    {new Date(session.date).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })} · {session.location}
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted-foreground">{session.attendeeCount}/{session.capacity} students recorded</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          {selectedSession ? (
+            <>
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[.07em] text-muted-foreground">Selected flex block</p>
+                    <h2 className="mt-2 text-[28px] font-semibold tracking-tight text-foreground">{selectedSession.title}</h2>
+                    <p className="mt-2 text-[12.5px] text-muted-foreground">
+                      {new Date(selectedSession.date).toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} · {selectedSession.location}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => exportAttendance("csv")} className="rounded-xl bg-muted px-4 py-2 text-[12px] font-semibold text-foreground transition-colors hover:bg-muted/80">
+                      Spreadsheet
+                    </button>
+                    <button onClick={() => exportAttendance("pdf")} className="rounded-xl bg-crimson px-4 py-2 text-[12px] font-semibold text-white transition-opacity hover:opacity-90">
+                      PDF
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+                    <p className="text-[11px] text-muted-foreground">Rostered</p>
+                    <p className="mt-1 text-[22px] font-semibold text-foreground">{selectedSession.attendees.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-50/70 px-4 py-3 dark:bg-amber-900/10">
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300">Missing signup</p>
+                    <p className="mt-1 text-[22px] font-semibold text-foreground">{missingSignupUsers.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-50/70 px-4 py-3 dark:bg-rose-900/10">
+                    <p className="text-[11px] text-rose-700 dark:text-rose-300">Absent</p>
+                    <p className="mt-1 text-[22px] font-semibold text-foreground">{absentAttendees.length}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-50/70 px-4 py-3 dark:bg-amber-900/10">
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300">Late</p>
+                    <p className="mt-1 text-[22px] font-semibold text-foreground">{lateAttendees.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-5 xl:grid-cols-2">
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+                  <p className="text-[13px] font-bold text-foreground">Missing flex signup on this date</p>
+                  <div className="mt-4 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                    {missingSignupUsers.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted-foreground">
+                        Everyone picked a flex block for this date.
+                      </div>
+                    ) : missingSignupUsers.map((user) => (
+                      <div key={user.id} className="rounded-xl bg-muted/30 px-4 py-3">
+                        <p className="text-[13px] font-semibold text-foreground">{user.name ?? "Unnamed student"}</p>
+                        <p className="mt-1 text-[12px] text-muted-foreground">
+                          {user.email}{user.graduationYear ? ` · Class of ${user.graduationYear}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-card border border-border rounded-2xl p-5 shadow-card">
+                  <p className="text-[13px] font-bold text-foreground">Absent or late in this session</p>
+                  <div className="mt-4 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                    {[...absentAttendees, ...lateAttendees].length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-[12px] text-muted-foreground">
+                        No absences or late arrivals are recorded for this session.
+                      </div>
+                    ) : [...absentAttendees, ...lateAttendees].map((attendee: any) => (
+                      <div key={attendee.id} className="rounded-xl bg-muted/30 px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-foreground">{attendee.user.name ?? "Unnamed student"}</p>
+                            <p className="truncate mt-1 text-[12px] text-muted-foreground">
+                              {attendee.user.email}{attendee.user.graduationYear ? ` · Class of ${attendee.user.graduationYear}` : ""}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                            {String(attendee.status).replaceAll("_", " ").toLowerCase()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="bg-card border border-border rounded-2xl p-8 text-center text-[13px] text-muted-foreground shadow-card">
+              Select a flex session to review attendance reports.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Clubs Tab ────────────────────────────────────────────────────────────────
 function ClubsTab({ clubs, canArchive, canFlag }: { clubs: any[]; canArchive: boolean; canFlag: boolean }) {
   const [pending, startTransition] = useTransition();

@@ -1272,7 +1272,7 @@ export function FacultySessionManager({
               <div className="surface-card rounded-[32px] p-8 text-center">
                 <p className="text-base font-semibold text-foreground">Pick a flex session to manage attendance</p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Choose any active or scheduled flex block below to open its QR code, roster, and reports.
+                  Choose any active or scheduled flex block below to open its QR code and live roster tools.
                 </p>
               </div>
             )}
