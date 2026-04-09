@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarDays, Compass, FileText, ShieldCheck, Users } from "lucide-react";
+import { CalendarDays, Compass, FileText, Heart, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { canAccessFacultyTools } from "@/lib/roles";
+import { canAccessFacultyTools, canAccessMissionMinistry } from "@/lib/roles";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
 
 export const metadata = { title: "Faculty Dashboard" };
@@ -113,6 +113,7 @@ export default async function FacultyDashboardPage() {
       return 0;
     }),
   ]);
+  const canManageMinistry = canAccessMissionMinistry(session.user.role);
 
   return (
     <div className="space-y-6">
@@ -227,6 +228,31 @@ export default async function FacultyDashboardPage() {
           </div>
         )}
       </div>
+
+      {canManageMinistry ? (
+        <div className="rounded-[2rem] border border-border bg-[linear-gradient(145deg,rgba(139,26,26,0.12),rgba(217,119,6,0.1),rgba(14,165,233,0.08))] p-5 shadow-card sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70 text-[hsl(var(--primary))] shadow-sm">
+                <Heart className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[.12em] text-muted-foreground">Mission & Ministry</p>
+              <h2 className="mt-2 text-[1.75rem] font-semibold tracking-[-0.05em] text-foreground">Publish service, Kairos, and retreat programs</h2>
+              <p className="mt-2 text-[14px] leading-7 text-muted-foreground">
+                Mission & Ministry publishing now lives in its own staff workspace, separate from the student page, so it stays cleaner and easier to manage.
+              </p>
+            </div>
+
+            <Link
+              href="/faculty/mission-ministry"
+              className="inline-flex items-center justify-center rounded-2xl bg-neutral-950 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Open Mission & Ministry tools
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
