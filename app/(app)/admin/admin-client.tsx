@@ -29,13 +29,14 @@ import Link from "next/link";
 import type { NhsRecord } from "@/lib/airtable";
 import { canAccessAdmin, getClubLeadershipRoleLabel, getRoleBadgeClass, getRoleLabel } from "@/lib/roles";
 
-type AdminTab = "overview" | "requests" | "activity" | "clubs" | "users" | "applications" | "changelog" | "nhs";
+type AdminTab = "overview" | "requests" | "activity" | "flex" | "clubs" | "users" | "applications" | "changelog" | "nhs";
 
 interface Props {
   clubs: any[];
   users: any[];
   applications: any[];
   changelog: any[];
+  flexSessions: any[];
   nhsRecords: NhsRecord[];
   currentRole: any;
   analytics: {
@@ -50,6 +51,7 @@ const TABS: { id: AdminTab; label: string; icon: any }[] = [
   { id: "overview",      label: "Overview",     icon: BarChart3    },
   { id: "requests",      label: "Requests",     icon: ClipboardList },
   { id: "activity",      label: "Activity",     icon: History      },
+  { id: "flex",          label: "Flex Reports", icon: CheckCircle  },
   { id: "clubs",         label: "Clubs",        icon: Building2    },
   { id: "users",         label: "Users",        icon: Users        },
   { id: "applications",  label: "Applications", icon: FileText     },
@@ -57,7 +59,7 @@ const TABS: { id: AdminTab; label: string; icon: any }[] = [
   { id: "nhs",           label: "NHS Data",     icon: GraduationCap},
 ];
 
-export function AdminClient({ clubs, users, applications, changelog, nhsRecords, currentRole, analytics }: Props) {
+export function AdminClient({ clubs, users, applications, changelog, flexSessions, nhsRecords, currentRole, analytics }: Props) {
   const [tab, setTab] = useState<AdminTab>("overview");
   const isAdmin = canAccessAdmin(currentRole);
   const pendingApplications = applications.filter((application) => ["SUBMITTED", "UNDER_REVIEW"].includes(application.status));
@@ -108,6 +110,7 @@ export function AdminClient({ clubs, users, applications, changelog, nhsRecords,
           {tab === "overview"     && <OverviewTab clubs={clubs} users={users} applications={applications} nhsRecords={nhsRecords} analytics={analytics} changelog={changelog} />}
           {tab === "requests"     && <RequestsTab clubs={clubs} applications={applications} />}
           {tab === "activity"     && <ActivityTab items={recentActivity} flaggedClubs={flaggedClubs} pendingClubRequests={pendingClubRequests} />}
+          {tab === "flex"         && <FlexReportsTab sessions={flexSessions} users={users} />}
           {tab === "clubs"        && <ClubsTab clubs={clubs} canArchive={isAdmin} canFlag />}
           {tab === "users"        && <UsersTab users={users} clubs={clubs} canManageUsers={isAdmin} />}
           {tab === "applications" && <ApplicationsTab applications={applications} canReview={isAdmin} />}

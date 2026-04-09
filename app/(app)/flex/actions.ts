@@ -645,6 +645,62 @@ export async function addStudentsToFlexSession(sessionId: string, userIds: strin
   };
 }
 
+export async function removeStudentsFromFlexSession(sessionId: string, userIds: string | string[]) {
+  const user = await requireUser();
+  if (!user) return { error: "You need to sign in first." };
+  if (!canAccessFacultyTools(user.role)) {
+    return { error: "Only faculty and admins can remove students from a flex session." };
+  }
+
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId },
+    select: {
+      id: true,
+      title: true,
+      clubId: true,
+      createdById: true,
+    },
+  });
+
+  if (!session) return { error: "Session not found." };
+
+  const canManage = session.clubId
+    ? await canManageClubAttendanceSession(session.clubId, user.id, user.role)
+    : canAccessFacultyTools(user.role) || session.createdById === user.id;
+
+  if (!canManage) {
+    return { error: "You don't have permission to remove students from that session." };
+  }
+
+  const targetUserIds = Array.isArray(userIds) ? Array.from(new Set(userIds.filter(Boolean))) : [userIds];
+  if (targetUserIds.length === 0) return { error: "Select at least one student first." };
+
+  const targetUsers = await prisma.user.findMany({
+    where: { id: { in: targetUserIds } },
+    select: { id: true, name: true, email: true },
+  });
+
+  if (targetUsers.length === 0) return { error: "Student not found." };
+
+  const deletion = await prisma.attendanceRecord.deleteMany({
+    where: {
+      sessionId,
+      userId: { in: targetUsers.map((targetUser) => targetUser.id) },
+    },
+  });
+
+  revalidatePath("/flex");
+  revalidatePath("/dashboard");
+  revalidatePath("/faculty/create-session");
+
+  return {
+    success: true,
+    title: session.title,
+    studentName: targetUsers[0]?.name || targetUsers[0]?.email || "Student",
+    removedCount: deletion.count,
+  };
+}
+
 export async function addStudentsToMultipleFlexSessions(sessionIds: string[], userIds: string | string[]) {
   const user = await requireUser();
   if (!user) return { error: "You need to sign in first." };

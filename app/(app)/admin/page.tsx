@@ -7,6 +7,7 @@ import { getAllNhsRecords } from "@/lib/airtable";
 import { AdminClient } from "./admin-client";
 import { canAccessAdmin } from "@/lib/roles";
 import { isPrismaSchemaMismatchError } from "@/lib/prisma-errors";
+import { getFlexBlockWindow } from "@/lib/flex-attendance";
 
 export const metadata = { title: "Admin Panel" };
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const session = await auth();
   if (!session?.user || !canAccessAdmin(session.user.role)) redirect("/dashboard?error=unauthorized");
+  const { date } = getFlexBlockWindow();
 
   const advisorClubIds: string[] = [];
 
@@ -94,7 +96,7 @@ export default async function AdminPage() {
     }));
   }
 
-  const [users, applications, changelog, nhsRecords, totalEvents, attendanceCount, participatingStudents] = await Promise.all([
+  const [users, applications, changelog, nhsRecords, totalEvents, attendanceCount, participatingStudents, flexSessions] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -127,6 +129,53 @@ export default async function AdminPage() {
     prisma.user.count({
       where: { memberships: { some: { status: "ACTIVE" } } },
     }),
+    prisma.attendanceSession.findMany({
+      where: {
+        date: {
+          gte: new Date(date.getFullYear(), date.getMonth(), date.getDate() - 60),
+          lt: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 14),
+        },
+      },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        clubId: true,
+        location: true,
+        capacity: true,
+        hostName: true,
+        isOpen: true,
+        date: true,
+        records: {
+          orderBy: [{ checkIn: "desc" }, { joinedAt: "desc" }],
+          select: {
+            id: true,
+            status: true,
+            present: true,
+            joinedAt: true,
+            checkIn: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                grade: true,
+                graduationYear: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            records: true,
+          },
+        },
+      },
+    }).catch((error) => {
+      if (!isPrismaSchemaMismatchError(error)) throw error;
+      return [];
+    }),
   ]);
 
   return (
@@ -135,6 +184,26 @@ export default async function AdminPage() {
       users={users as any}
       applications={applications as any}
       changelog={changelog as any}
+      flexSessions={flexSessions.map((item) => ({
+        id: item.id,
+        title: item.title,
+        type: item.type,
+        clubId: item.clubId,
+        location: item.location,
+        capacity: item.capacity,
+        attendeeCount: item._count.records,
+        hostName: item.hostName,
+        isOpen: item.isOpen,
+        date: item.date.toISOString(),
+        attendees: item.records.map((record) => ({
+          id: record.id,
+          status: record.status,
+          present: record.present,
+          joinedAt: record.joinedAt.toISOString(),
+          checkIn: record.checkIn ? record.checkIn.toISOString() : null,
+          user: record.user,
+        })),
+      })) as any}
       nhsRecords={nhsRecords}
       currentRole={session.user.role}
       analytics={{

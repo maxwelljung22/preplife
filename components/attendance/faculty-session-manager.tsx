@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AttendanceSessionType, AttendanceStatus, UserRole } from "@prisma/client";
-import { BarChart3, CalendarDays, CheckCircle2, Clock3, Download, MapPin, Plus, QrCode, ScanLine, Search, Timer, Trash2, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock3, Download, MapPin, Plus, QrCode, ScanLine, Search, Timer, Trash2, Users, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,7 @@ import {
   deleteFlexSelectionGroup,
   deleteFlexSession,
   markFlexAttendanceManually,
+  removeStudentsFromFlexSession,
 } from "@/app/(app)/flex/actions";
 import { FLEX_BLOCK_LABEL, getAttendanceStatusLabel, getSessionTypeLabel } from "@/lib/flex-attendance";
 import { cn } from "@/lib/utils";
@@ -88,8 +89,7 @@ export function FacultySessionManager({
   const [classFilter, setClassFilter] = useState("all");
   const [bulkStudentIds, setBulkStudentIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"create" | "attendance" | "assign">("create");
-  const [attendanceTab, setAttendanceTab] = useState<"qr" | "log" | "reports" | "sessions">("qr");
-  const [reportView, setReportView] = useState<"recorded" | "missing" | "absent">("recorded");
+  const [attendanceTab, setAttendanceTab] = useState<"qr" | "log" | "sessions">("qr");
   const [assignmentSessionIds, setAssignmentSessionIds] = useState<string[]>([]);
   const [groupName, setGroupName] = useState("");
   const isAdmin = currentRole === "ADMIN";
@@ -117,7 +117,6 @@ export function FacultySessionManager({
   const upcomingSessions = sessions.filter((session) => new Date(session.date) > new Date() && new Date(session.date).toDateString() !== todayKey);
   const historySessions = sessions.filter((session) => new Date(session.date) < new Date(new Date().setHours(0, 0, 0, 0)));
   const assignableSessions = sessions.filter((session) => new Date(session.date) >= new Date(new Date().setHours(0, 0, 0, 0)));
-  const selectedDateKey = selectedQrSession ? new Date(selectedQrSession.date).toDateString() : null;
   const availableStudents = useMemo(() => {
     const query = studentQuery.trim().toLowerCase();
     const classFiltered = classFilter === "all"
@@ -131,21 +130,6 @@ export function FacultySessionManager({
       )
       .slice(0, 30);
   }, [classFilter, studentQuery, students]);
-
-  const flexDateSignedUpUserIds = useMemo(() => {
-    if (!selectedDateKey) return new Set<string>();
-
-    return new Set(
-      sessions
-        .filter((session) => new Date(session.date).toDateString() === selectedDateKey)
-        .flatMap((session) => session.attendees.map((attendee) => attendee.user.id))
-    );
-  }, [selectedDateKey, sessions]);
-
-  const missingFlexSignupStudents = useMemo(
-    () => students.filter((student) => !flexDateSignedUpUserIds.has(student.id)),
-    [flexDateSignedUpUserIds, students]
-  );
 
   const attendanceSummary = useMemo(() => {
     if (!selectedQrSession) return null;
@@ -164,15 +148,6 @@ export function FacultySessionManager({
     if (bulkStudentIds.length > 0) return Array.from(new Set(bulkStudentIds));
     return selectedStudentId ? [selectedStudentId] : [];
   }, [bulkStudentIds, selectedStudentId]);
-
-  const visibleReportAttendees = useMemo(() => {
-    if (!selectedQrSession) return [];
-    if (reportView === "absent") {
-      return attendanceSummary?.absent ?? [];
-    }
-
-    return selectedQrSession.attendees;
-  }, [attendanceSummary, reportView, selectedQrSession]);
 
   const attendanceStatusCounts = useMemo(() => {
     if (!selectedQrSession) {
@@ -237,7 +212,6 @@ export function FacultySessionManager({
         recurrenceWeeks: "6",
         recurrenceDays: [new Date().getDay()],
       });
-      setReportView("recorded");
       setAttendanceTab("qr");
       setSelectedQrSessionId(result.session.id);
       router.refresh();
@@ -262,7 +236,6 @@ export function FacultySessionManager({
       });
       if (selectedQrSessionId === sessionId) {
         setSelectedQrSessionId(null);
-        setReportView("recorded");
         setAttendanceTab("qr");
       }
       router.refresh();
@@ -333,6 +306,42 @@ export function FacultySessionManager({
         description: result.updatedCount > 1
           ? `${result.updatedCount} students were added to ${result.title}.`
           : `${result.studentName} was added to ${result.title}.`,
+      });
+      setSelectedStudentId("");
+      setStudentQuery("");
+      setBulkStudentIds([]);
+      router.refresh();
+    });
+  };
+
+  const handleRemoveStudents = (userIds?: string | string[]) => {
+    if (!selectedQrSession) return;
+    const targetUserIds = userIds ?? effectiveSelectedIds;
+    if (!targetUserIds || (Array.isArray(targetUserIds) && targetUserIds.length === 0)) {
+      toast({
+        title: "Choose students first",
+        description: "Select one or more students to remove from this flex roster.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await removeStudentsFromFlexSession(selectedQrSession.id, targetUserIds);
+      if ("error" in result) {
+        toast({
+          title: "Couldn't remove students",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Roster updated",
+        description: result.removedCount > 1
+          ? `${result.removedCount} students were removed from ${result.title}.`
+          : `${result.studentName} was removed from ${result.title}.`,
       });
       setSelectedStudentId("");
       setStudentQuery("");
@@ -476,9 +485,8 @@ export function FacultySessionManager({
     window.location.href = `/api/flex/export?sessionId=${targetSessionId}&format=${format}`;
   };
 
-  const openSessionManager = (sessionId: string, view: "qr" | "log" | "reports" = "reports") => {
+  const openSessionManager = (sessionId: string, view: "qr" | "log" | "sessions" = "log") => {
     setSelectedQrSessionId(sessionId);
-    setReportView("recorded");
     setActiveTab("attendance");
     setAttendanceTab(view);
   };
@@ -732,7 +740,6 @@ export function FacultySessionManager({
                         </Button>
                         <Button variant="secondary" onClick={() => {
                           setSelectedQrSessionId(session.id);
-                          setReportView("recorded");
                           setActiveTab("attendance");
                           setAttendanceTab("qr");
                         }}>
@@ -783,13 +790,12 @@ export function FacultySessionManager({
                         {[
                           { key: "qr", label: "QR Display", icon: QrCode },
                           { key: "log", label: "Log Attendance", icon: ScanLine },
-                          { key: "reports", label: "Reports", icon: BarChart3 },
                           { key: "sessions", label: "Sessions", icon: CalendarDays },
                         ].map((tab) => (
                           <button
                             key={tab.key}
                             type="button"
-                            onClick={() => setAttendanceTab(tab.key as "qr" | "log" | "reports" | "sessions")}
+                            onClick={() => setAttendanceTab(tab.key as "qr" | "log" | "sessions")}
                             className={cn(
                               "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
                               attendanceTab === tab.key
@@ -1090,6 +1096,10 @@ export function FacultySessionManager({
                           <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT")} disabled={isPending || effectiveSelectedIds.length === 0}>
                             Mark absent
                           </Button>
+                          <Button variant="ghost" size="lg" onClick={() => handleRemoveStudents()} disabled={isPending || effectiveSelectedIds.length === 0}>
+                            <UserX className="h-4 w-4" />
+                            Remove selected
+                          </Button>
                           {isAdmin ? (
                             <Button variant="secondary" size="lg" onClick={() => handleManualMark("ABSENT_EXCUSED")} disabled={isPending || effectiveSelectedIds.length === 0}>
                               Absent excused
@@ -1162,6 +1172,10 @@ export function FacultySessionManager({
                                   <Button variant="secondary" size="sm" onClick={() => handleManualMark("ABSENT", attendee.user.id)} disabled={isPending}>
                                     Absent
                                   </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => handleRemoveStudents(attendee.user.id)} disabled={isPending}>
+                                    <UserX className="h-4 w-4" />
+                                    Remove
+                                  </Button>
                                   {isAdmin ? (
                                     <Button variant="secondary" size="sm" onClick={() => handleManualMark("ABSENT_EXCUSED", attendee.user.id)} disabled={isPending}>
                                       Absent excused
@@ -1182,198 +1196,6 @@ export function FacultySessionManager({
                   </section>
                   ) : null}
 
-                  {attendanceTab === "reports" ? (
-                    <section className="surface-card rounded-[32px] p-5 sm:p-6">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Attendance reports</p>
-                          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">Roster, missing signup, and absences</h3>
-                          <p className="mt-2 text-sm text-muted-foreground">
-                            Review the session without the search-and-mark controls cluttering the screen.
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Button variant="secondary" onClick={() => exportAttendance("csv", selectedQrSession.id)}>
-                            <Download className="h-4 w-4" />
-                            Spreadsheet
-                          </Button>
-                          <Button variant="secondary" onClick={() => exportAttendance("pdf", selectedQrSession.id)}>
-                            <Download className="h-4 w-4" />
-                            PDF
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 rounded-[28px] border border-border bg-background p-4 sm:p-5">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recorded attendees</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Review the live roster, missing flex signups, and students marked absent.</p>
-                          </div>
-                          <div className="rounded-full border border-border bg-muted/70 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-                            {missingFlexSignupStudents.length} not signed up
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                          <div className="rounded-[22px] border border-[hsl(var(--primary)/0.18)] bg-[linear-gradient(135deg,hsl(var(--primary)/0.12),transparent_75%)] px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Recorded roster</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{selectedQrSession.attendees.length}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">Students in this session roster</p>
-                          </div>
-                          <div className="rounded-[22px] border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">Missing signup</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{missingFlexSignupStudents.length}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">Students without a flex choice that day</p>
-                          </div>
-                          <div className="rounded-[22px] border border-rose-500/20 bg-rose-500/5 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700 dark:text-rose-300">Absent</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.absent.length ?? 0}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">Students marked absent in this session</p>
-                          </div>
-                          <div className="rounded-[22px] border border-sky-500/20 bg-sky-500/5 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-sky-700 dark:text-sky-300">Excused</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{attendanceStatusCounts.excused}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">Absent or late with an excuse</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                          <button
-                            type="button"
-                            onClick={() => setReportView("missing")}
-                            className={cn(
-                              "rounded-[20px] border px-4 py-3 text-left transition-colors",
-                              reportView === "missing"
-                                ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)]"
-                                : "border-border bg-muted/35"
-                            )}
-                          >
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Not signed up</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{missingFlexSignupStudents.length}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">Across this flex date</p>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setReportView("absent")}
-                            className={cn(
-                              "rounded-[20px] border px-4 py-3 text-left transition-colors",
-                              reportView === "absent"
-                                ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)]"
-                                : "border-border bg-muted/35"
-                            )}
-                          >
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Marked absent</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.absent.length ?? 0}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">This session only</p>
-                          </button>
-                          <div className="rounded-[20px] border border-border bg-muted/35 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Absent Excused</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.absentExcused.length ?? 0}</p>
-                          </div>
-                          <div className="rounded-[20px] border border-border bg-muted/35 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Late Excused</p>
-                            <p className="mt-2 text-xl font-semibold text-foreground">{attendanceSummary?.lateExcused.length ?? 0}</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {[
-                            { key: "recorded", label: "Recorded roster" },
-                            { key: "missing", label: "Missing signup" },
-                            { key: "absent", label: "Absent list" },
-                          ].map((view) => (
-                            <button
-                              key={view.key}
-                              type="button"
-                              onClick={() => setReportView(view.key as "recorded" | "missing" | "absent")}
-                              className={cn(
-                                "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors",
-                                reportView === view.key
-                                  ? "border-[hsl(var(--primary)/0.28)] bg-[hsl(var(--primary)/0.08)] text-foreground"
-                                  : "border-border bg-background text-muted-foreground"
-                              )}
-                            >
-                              {view.label}
-                            </button>
-                          ))}
-                        </div>
-
-                        <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
-                          {reportView === "missing" ? (
-                            missingFlexSignupStudents.length === 0 ? (
-                              <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-center">
-                                <p className="text-sm font-medium text-foreground">Everyone picked a flex block</p>
-                                <p className="mt-2 text-xs text-muted-foreground">
-                                  No students are missing a flex signup for this date.
-                                </p>
-                              </div>
-                            ) : (
-                              missingFlexSignupStudents.map((student) => (
-                                <div key={student.id} className="rounded-[24px] border border-border bg-muted/30 p-4">
-                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium text-foreground">{student.name || "Unnamed student"}</p>
-                                      <p className="truncate text-xs text-muted-foreground">
-                                        {student.email || "No email"}{student.graduationYear ? ` · Class of ${student.graduationYear}` : ""}
-                                      </p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      <span className="inline-flex rounded-full bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-300">
-                                        Not signed up
-                                      </span>
-                                      {canUsePresign ? (
-                                        <Button size="sm" variant="secondary" onClick={() => handleBulkAdd(student.id)} disabled={isPending}>
-                                          <Plus className="h-4 w-4" />
-                                          Add to session
-                                        </Button>
-                                      ) : null}
-                                    </div>
-                                  </div>
-                                </div>
-                              ))
-                            )
-                          ) : visibleReportAttendees.length === 0 ? (
-                            <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-center">
-                              <p className="text-sm font-medium text-foreground">
-                                {reportView === "absent" ? "No absences recorded" : "No one recorded yet"}
-                              </p>
-                              <p className="mt-2 text-xs text-muted-foreground">
-                                {reportView === "absent"
-                                  ? "Students marked absent will appear here."
-                                  : "Students will appear here after they join or when you mark them manually."}
-                              </p>
-                            </div>
-                          ) : (
-                            visibleReportAttendees.map((attendee) => (
-                              <div key={attendee.id} className="rounded-[24px] border border-border bg-muted/30 p-4">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-sm font-medium text-foreground">{attendee.user.name || "Unnamed student"}</p>
-                                    <p className="truncate text-xs text-muted-foreground">
-                                      {attendee.user.email || "No email"}{attendee.user.graduationYear ? ` · Class of ${attendee.user.graduationYear}` : ""}
-                                    </p>
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium", getStatusClass(attendee.status))}>
-                                      {getAttendanceStatusLabel(attendee.status)}
-                                    </span>
-                                    {attendee.checkIn ? (
-                                      <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                                        <Clock3 className="h-3 w-3" />
-                                        {new Date(attendee.checkIn).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </section>
-                  ) : null}
-
                   {attendanceTab === "sessions" ? (
                     <section className="surface-card rounded-[32px] p-5 sm:p-6">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -1381,7 +1203,7 @@ export function FacultySessionManager({
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Session browser</p>
                           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-foreground">Switch sessions without clutter</h3>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            Pick a session here, then jump back into QR, logging, or reports.
+                            Pick a session here, then jump back into its QR display or live roster tools.
                           </p>
                         </div>
                         <div className="rounded-full border border-border bg-muted/70 px-3 py-1.5 text-[12px] font-medium text-muted-foreground">
@@ -1410,7 +1232,7 @@ export function FacultySessionManager({
                                 >
                                   <button
                                     type="button"
-                                    onClick={() => openSessionManager(session.id, "reports")}
+                                    onClick={() => openSessionManager(session.id, "log")}
                                     className="w-full text-left"
                                   >
                                     <p className="text-sm font-medium text-foreground">{session.title}</p>
@@ -1420,7 +1242,7 @@ export function FacultySessionManager({
                                     <p className="mt-1 text-xs text-muted-foreground">{session.attendeeCount}/{session.capacity} joined</p>
                                   </button>
                                   <div className="mt-3 flex flex-wrap gap-2">
-                                    <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "reports")}>
+                                    <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "log")}>
                                       Manage
                                     </Button>
                                     <Button variant="ghost" size="sm" onClick={() => exportAttendance("csv", session.id)}>
@@ -1480,7 +1302,7 @@ export function FacultySessionManager({
                   >
                     <button
                       type="button"
-                      onClick={() => openSessionManager(session.id, "reports")}
+                      onClick={() => openSessionManager(session.id, "log")}
                       className="flex flex-col items-start gap-3 transition-colors hover:bg-muted/0 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
@@ -1492,7 +1314,7 @@ export function FacultySessionManager({
                       <span className="text-[11px] font-medium text-muted-foreground">{getSessionTypeLabel(session.type)}</span>
                     </button>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "reports")}>
+                      <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "log")}>
                         Manage
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => exportAttendance("csv", session.id)}>
@@ -1537,7 +1359,7 @@ export function FacultySessionManager({
                   >
                     <button
                       type="button"
-                      onClick={() => openSessionManager(session.id, "reports")}
+                      onClick={() => openSessionManager(session.id, "log")}
                       className="flex flex-col items-start gap-3 transition-colors hover:bg-muted/0 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
@@ -1549,7 +1371,7 @@ export function FacultySessionManager({
                       <span className="text-[11px] font-medium text-muted-foreground">{getSessionTypeLabel(session.type)}</span>
                     </button>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "reports")}>
+                      <Button variant="secondary" size="sm" onClick={() => openSessionManager(session.id, "log")}>
                         Manage
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => exportAttendance("csv", session.id)}>
