@@ -65,7 +65,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open [https://hawklife.vercel.app](https://hawklife.vercel.app) for production or `http://localhost:3000` for local development.
+Open [https://hawklife.org](https://hawklife.org) for production or `http://localhost:3000` for local development.
 
 ## Environment Variables
 
@@ -74,7 +74,7 @@ Required variables:
 - `DATABASE_URL`: Supabase pooled connection string for the app
 - `DIRECT_URL`: Supabase direct connection string for schema changes
 - `NEXTAUTH_SECRET`: secret used for authentication sessions
-- `NEXTAUTH_URL`: deployment URL, typically `https://hawklife.vercel.app`
+- `NEXTAUTH_URL`: deployment URL, typically `https://hawklife.org`
 - `GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 - `AIRTABLE_API_KEY`: Airtable API token for NHS sync
