@@ -10,7 +10,8 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID ?? "appJJ7OQC18yfQF5V";
 const AIRTABLE_TABLE   = process.env.AIRTABLE_TABLE   ?? "tblUPK4WTWSmKYouy";
 const AIRTABLE_KEY     = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_SHARE_ID = process.env.AIRTABLE_SHARE_ID ?? "shrtapfD0KBciqa6E";
-const AIRTABLE_PUBLIC_CSV_URL = process.env.AIRTABLE_PUBLIC_CSV_URL?.trim() || null;
+const DEFAULT_AIRTABLE_SHARE_URL = "https://airtable.com/appJJ7OQC18yfQF5V/shrtapfD0KBciqa6E/tblUPK4WTWSmKYouy?authuser=2";
+const AIRTABLE_PUBLIC_CSV_URL = process.env.AIRTABLE_PUBLIC_CSV_URL?.trim() || DEFAULT_AIRTABLE_SHARE_URL;
 const CACHE_TTL_MS     = 5 * 60 * 1000; // 5 minutes
 
 const REQUIRED_HOURS: Record<number, number> = {
@@ -65,6 +66,27 @@ function hasUsablePublicCsvUrl(url?: string | null) {
   return Boolean(url && /^https?:\/\//i.test(url));
 }
 
+function derivePublicCsvCandidates(url: string | null) {
+  if (!url) return [];
+
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    const shareId = segments.find((segment) => segment.startsWith("shrt")) ?? AIRTABLE_SHARE_ID;
+    const tableId = segments.find((segment) => segment.startsWith("tbl")) ?? AIRTABLE_TABLE;
+
+    return Array.from(
+      new Set([
+        url,
+        `https://airtable.com/v0.3/view/${shareId}/downloadCsv?blocks=hide`,
+        `https://airtable.com/${shareId}/${tableId}?blocks=hide&format=csv`,
+      ])
+    );
+  } catch {
+    return [url];
+  }
+}
+
 function getFirstField(fields: Record<string, any>, keys: readonly string[]) {
   for (const key of keys) {
     const value = fields[key];
@@ -96,7 +118,7 @@ function parseGradeValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-async function getUserMatchMaps() {
+const getUserMatchMaps = cache(async () => {
   const users = await prisma.user.findMany({
     where: {
       OR: [
@@ -129,7 +151,7 @@ async function getUserMatchMaps() {
   }
 
   return { byEmail, byName };
-}
+});
 
 function resolveMatchedUser(
   byEmail: Map<string, any>,
@@ -218,11 +240,12 @@ async function fetchFromAirtable(): Promise<NhsRecord[]> {
     if (records.length > 0) return records;
   }
 
-  const publicCsvCandidates = [
-    AIRTABLE_PUBLIC_CSV_URL,
-    `https://airtable.com/v0.3/view/${AIRTABLE_SHARE_ID}/downloadCsv?blocks=hide`,
-    `https://airtable.com/${AIRTABLE_SHARE_ID}/${AIRTABLE_TABLE}?blocks=hide&format=csv`,
-  ].filter(Boolean) as string[];
+  const publicCsvCandidates = Array.from(
+    new Set([
+      ...derivePublicCsvCandidates(AIRTABLE_PUBLIC_CSV_URL),
+      ...derivePublicCsvCandidates(`https://airtable.com/${AIRTABLE_SHARE_ID}/${AIRTABLE_TABLE}`),
+    ])
+  );
 
   for (const url of publicCsvCandidates) {
     try {
