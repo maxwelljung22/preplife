@@ -9,6 +9,13 @@ import type { JWT } from "next-auth/jwt";
 import { getDefaultRoleForEmail, resolveRoleForUser } from "@/lib/roles";
 import { getServerSecret } from "@/lib/server-secrets";
 
+const CANONICAL_PRODUCTION_URL = "https://hawklife.org";
+
+if (process.env.NODE_ENV === "production") {
+  process.env.AUTH_URL = CANONICAL_PRODUCTION_URL;
+  process.env.NEXTAUTH_URL = CANONICAL_PRODUCTION_URL;
+}
+
 const authEnv = getAuthEnv({ strict: false });
 const googleConfigured = Boolean(authEnv.googleClientId && authEnv.googleClientSecret);
 const authSecret =
