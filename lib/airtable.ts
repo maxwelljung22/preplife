@@ -4,6 +4,7 @@
  * Cache TTL: 5 minutes. Matches students by email, then name fallback.
  */
 import { cache } from "react";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID ?? "appJJ7OQC18yfQF5V";
@@ -367,7 +368,7 @@ async function writeCache(records: NhsRecord[]): Promise<void> {
           requiredHours: r.requiredHours,
           activities:    r.activities as any,
           lastSyncAt:    r.lastSyncAt,
-          rawData:       null,
+          rawData:       Prisma.JsonNull,
         },
         create: {
           airtableId:    r.id,
@@ -378,7 +379,7 @@ async function writeCache(records: NhsRecord[]): Promise<void> {
           requiredHours: r.requiredHours,
           activities:    r.activities as any,
           lastSyncAt:    r.lastSyncAt,
-          rawData:       null,
+          rawData:       Prisma.JsonNull,
         },
       })
     )
